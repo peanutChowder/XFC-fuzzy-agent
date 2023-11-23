@@ -216,11 +216,14 @@ class ScottDickController(KesslerController):
         thrust = 0.0
         
         self.eval_frames +=1
+
+        # added due to error of missing return argument in kesslergame.py, line 125#
+        drop_mine = False
         
         #DEBUG
-        print(thrust, bullet_t, shooting_theta, turn_rate, fire)
+        print(thrust, bullet_t, shooting_theta, turn_rate, fire, drop_mine)
         
-        return thrust, turn_rate, fire
+        return thrust, turn_rate, fire, drop_mine
 
     @property
     def name(self) -> str:
