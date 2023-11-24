@@ -4,14 +4,13 @@
 # this source code package.
 
 import sys
-sys.path.append("C:/Users/krist/XFC-fuzzy-agent/kessler-game-main")
 
 import time
 
 from src.kesslergame import Scenario, KesslerGame, GraphicsType
-from test_controller import TestController
-from scott_dick_controller import ScottDickController
-from graphics_both import GraphicsBoth
+from examples.test_controller import TestController
+from examples.scott_dick_controller import ScottDickController
+from examples.graphics_both import GraphicsBoth
 
 # Define game scenario
 my_test_scenario = Scenario(name='Test Scenario',
