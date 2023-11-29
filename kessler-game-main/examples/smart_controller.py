@@ -116,9 +116,9 @@ class SmartController(KesslerController):
         thrust = ctrl.Consequent(np.arange(-300, 300, 1), 'ship_thrust')
 
         # C = close, M = medium, F = far
-        nearestAsteroidDistance["C"] = fuzz.trimf(nearestAsteroidDistance.universe, [0, 0, 80])
-        nearestAsteroidDistance["M"] = fuzz.trimf(nearestAsteroidDistance.universe, [30, 120, 210])
-        nearestAsteroidDistance["F"] = fuzz.trimf(nearestAsteroidDistance.universe, [160, 250, 250])
+        nearestAsteroidDistance["C"] = fuzz.trimf(nearestAsteroidDistance.universe, [0, 0, 150])
+        nearestAsteroidDistance["M"] = fuzz.trimf(nearestAsteroidDistance.universe, [120, 200, 300])
+        nearestAsteroidDistance["F"] = fuzz.trimf(nearestAsteroidDistance.universe, [200, 400, 400])
 
         # first letter: F = forwards, R = reverse
         # Second letter is F = Fast, S = Slow
@@ -302,8 +302,6 @@ class SmartController(KesslerController):
         # Pass inputs to movement control
         thrust = ctrl.ControlSystemSimulation(self.thrustControl, flush_after_run=1)
         thrust.input["asteroid_distance"] = closest_asteroid["dist"]
-        print(ship_state["velocity"])
-        print(ship_state["heading"])
         thrust.input["curr_velocity"] = relativeVelocity
         
         shooting.compute()
@@ -326,7 +324,7 @@ class SmartController(KesslerController):
         drop_mine = False
         
         #DEBUG
-        print(thrust, bullet_t, shooting_theta, turn_rate, fire, drop_mine)
+        # print(thrust, bullet_t, shooting_theta, turn_rate, fire, drop_mine)
         
         return applyThrust, turn_rate, fire, drop_mine
 
