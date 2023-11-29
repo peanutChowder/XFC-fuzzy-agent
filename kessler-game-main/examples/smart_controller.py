@@ -170,7 +170,28 @@ class SmartController(KesslerController):
         self.thrustControl.addrule(rule12)
         self.thrustControl.addrule(rule13)  
         
+    def getClosestAsteroid(self, ship_state, game_state):
+        # Find the closest asteroid (disregards asteroid velocity)
+        ship_pos_x = ship_state["position"][0]     # See src/kesslergame/ship.py in the KesslerGame Github
+        ship_pos_y = ship_state["position"][1]       
+        closest_asteroid = None
         
+        for a in game_state["asteroids"]:
+            #Loop through all asteroids, find minimum Eudlidean distance
+            curr_dist = math.sqrt((ship_pos_x - a["position"][0])**2 + (ship_pos_y - a["position"][1])**2)
+            if closest_asteroid is None :
+                # Does not yet exist, so initialize first asteroid as the minimum. Ugh, how to do?
+                closest_asteroid = dict(aster = a, dist = curr_dist)
+                
+            else:    
+                # closest_asteroid exists, and is thus initialized. 
+                if closest_asteroid["dist"] > curr_dist:
+                    # New minimum found
+                    closest_asteroid["aster"] = a
+                    closest_asteroid["dist"] = curr_dist
+
+        # closest_asteroid is now the nearest asteroid object. 
+        return closest_asteroid
 
     def actions(self, ship_state: Dict, game_state: Dict) -> Tuple[float, float, bool]:
         """
@@ -193,33 +214,18 @@ class SmartController(KesslerController):
         # Goal: demonstrate processing of game state, fuzzy controller, intercept computation 
         # Intercept-point calculation derived from the Law of Cosines, see notes for details and citation.
 
-        # Find the closest asteroid (disregards asteroid velocity)
-        ship_pos_x = ship_state["position"][0]     # See src/kesslergame/ship.py in the KesslerGame Github
-        ship_pos_y = ship_state["position"][1]       
-        closest_asteroid = None
-        
-        for a in game_state["asteroids"]:
-            #Loop through all asteroids, find minimum Eudlidean distance
-            curr_dist = math.sqrt((ship_pos_x - a["position"][0])**2 + (ship_pos_y - a["position"][1])**2)
-            if closest_asteroid is None :
-                # Does not yet exist, so initialize first asteroid as the minimum. Ugh, how to do?
-                closest_asteroid = dict(aster = a, dist = curr_dist)
-                
-            else:    
-                # closest_asteroid exists, and is thus initialized. 
-                if closest_asteroid["dist"] > curr_dist:
-                    # New minimum found
-                    closest_asteroid["aster"] = a
-                    closest_asteroid["dist"] = curr_dist
 
-        # closest_asteroid is now the nearest asteroid object. 
         # Calculate intercept time given ship & asteroid position, asteroid velocity vector, bullet speed (not direction).
         # Based on Law of Cosines calculation, see notes.
         
         # Side D of the triangle is given by closest_asteroid.dist. Need to get the asteroid-ship direction
         #    and the angle of the asteroid's current movement.
         # REMEMBER TRIG FUNCTIONS ARE ALL IN RADAINS!!!
-        
+
+        ship_pos_x = ship_state["position"][0]     # See src/kesslergame/ship.py in the KesslerGame Github
+        ship_pos_y = ship_state["position"][1]    
+
+        closest_asteroid = self.getClosestAsteroid(ship_state, game_state)
         
         asteroid_ship_x = ship_pos_x - closest_asteroid["aster"]["position"][0]
         asteroid_ship_y = ship_pos_y - closest_asteroid["aster"]["position"][1]
