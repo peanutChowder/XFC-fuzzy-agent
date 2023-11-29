@@ -170,10 +170,8 @@ class SmartController(KesslerController):
         self.thrustControl.addrule(rule12)
         self.thrustControl.addrule(rule13)  
         
-    def getClosestAsteroid(self, ship_state, game_state):
-        # Find the closest asteroid (disregards asteroid velocity)
-        ship_pos_x = ship_state["position"][0]     # See src/kesslergame/ship.py in the KesslerGame Github
-        ship_pos_y = ship_state["position"][1]       
+    def getClosestAsteroid(self, ship_pos_x, ship_pos_y, game_state):
+        # Find the closest asteroid (disregards asteroid velocity)      
         closest_asteroid = None
         
         for a in game_state["asteroids"]:
@@ -192,41 +190,8 @@ class SmartController(KesslerController):
 
         # closest_asteroid is now the nearest asteroid object. 
         return closest_asteroid
-
-    def actions(self, ship_state: Dict, game_state: Dict) -> Tuple[float, float, bool]:
-        """
-        Method processed each time step by this controller.
-        """
-        # These were the constant actions in the basic demo, just spinning and shooting.
-        #thrust = 0 <- How do the values scale with asteroid velocity vector?
-        #turn_rate = 90 <- How do the values scale with asteroid velocity vector?
-        
-        # Answers: Asteroid position and velocity are split into their x,y components in a 2-element ?array each.
-        # So are the ship position and velocity, and bullet position and velocity. 
-        # Units appear to be meters relative to origin (where?), m/sec, m/sec^2 for thrust.
-        # Everything happens in a time increment: delta_time, which appears to be 1/30 sec; this is hardcoded in many places.
-        # So, position is updated by multiplying velocity by delta_time, and adding that to position.
-        # Ship velocity is updated by multiplying thrust by delta time.
-        # Ship position for this time increment is updated after the the thrust was applied.
-        
-
-        # My demonstration controller does not move the ship, only rotates it to shoot the nearest asteroid.
-        # Goal: demonstrate processing of game state, fuzzy controller, intercept computation 
-        # Intercept-point calculation derived from the Law of Cosines, see notes for details and citation.
-
-
-        # Calculate intercept time given ship & asteroid position, asteroid velocity vector, bullet speed (not direction).
-        # Based on Law of Cosines calculation, see notes.
-        
-        # Side D of the triangle is given by closest_asteroid.dist. Need to get the asteroid-ship direction
-        #    and the angle of the asteroid's current movement.
-        # REMEMBER TRIG FUNCTIONS ARE ALL IN RADAINS!!!
-
-        ship_pos_x = ship_state["position"][0]     # See src/kesslergame/ship.py in the KesslerGame Github
-        ship_pos_y = ship_state["position"][1]    
-
-        closest_asteroid = self.getClosestAsteroid(ship_state, game_state)
-        
+    
+    def getShootingInputs(self, ship_pos_x, ship_pos_y, ship_state, closest_asteroid):
         asteroid_ship_x = ship_pos_x - closest_asteroid["aster"]["position"][0]
         asteroid_ship_y = ship_pos_y - closest_asteroid["aster"]["position"][1]
         
@@ -269,6 +234,44 @@ class SmartController(KesslerController):
         
         # Wrap all angles to (-pi, pi)
         shooting_theta = (shooting_theta + math.pi) % (2 * math.pi) - math.pi
+
+        return bullet_t, shooting_theta
+
+    def actions(self, ship_state: Dict, game_state: Dict) -> Tuple[float, float, bool]:
+        """
+        Method processed each time step by this controller.
+        """
+        # These were the constant actions in the basic demo, just spinning and shooting.
+        #thrust = 0 <- How do the values scale with asteroid velocity vector?
+        #turn_rate = 90 <- How do the values scale with asteroid velocity vector?
+        
+        # Answers: Asteroid position and velocity are split into their x,y components in a 2-element ?array each.
+        # So are the ship position and velocity, and bullet position and velocity. 
+        # Units appear to be meters relative to origin (where?), m/sec, m/sec^2 for thrust.
+        # Everything happens in a time increment: delta_time, which appears to be 1/30 sec; this is hardcoded in many places.
+        # So, position is updated by multiplying velocity by delta_time, and adding that to position.
+        # Ship velocity is updated by multiplying thrust by delta time.
+        # Ship position for this time increment is updated after the the thrust was applied.
+        
+
+        # My demonstration controller does not move the ship, only rotates it to shoot the nearest asteroid.
+        # Goal: demonstrate processing of game state, fuzzy controller, intercept computation 
+        # Intercept-point calculation derived from the Law of Cosines, see notes for details and citation.
+
+
+        # Calculate intercept time given ship & asteroid position, asteroid velocity vector, bullet speed (not direction).
+        # Based on Law of Cosines calculation, see notes.
+        
+        # Side D of the triangle is given by closest_asteroid.dist. Need to get the asteroid-ship direction
+        #    and the angle of the asteroid's current movement.
+        # REMEMBER TRIG FUNCTIONS ARE ALL IN RADAINS!!!
+
+        ship_pos_x = ship_state["position"][0]     # See src/kesslergame/ship.py in the KesslerGame Github
+        ship_pos_y = ship_state["position"][1]    
+
+        closest_asteroid = self.getClosestAsteroid(ship_pos_x, ship_pos_y, ship_state, game_state)
+        
+        bullet_t, shooting_theta = self.getShootingInputs(ship_pos_x, ship_pos_y, ship_state, closest_asteroid)
         
         # Pass the inputs to the rulebase and fire it
         shooting = ctrl.ControlSystemSimulation(self.targetingControl,flush_after_run=1)
