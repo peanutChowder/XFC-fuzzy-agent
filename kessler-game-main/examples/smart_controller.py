@@ -25,10 +25,11 @@ class SmartController(KesslerController):
     def __init__(self):
         self.eval_frames = 0 #What is this?
 
-        # self.targeting_control is the targeting rulebase, which is static in this controller.      
+        # self.targetingControl is the targeting rulebase, which is static in this controller.      
         # Declare variables
 
-        self.targeting_control = None
+        self.targetingControl = None
+        self.thrustControl = None
 
         self.initTargetControl()
         self.initMoveControl()
@@ -90,84 +91,87 @@ class SmartController(KesslerController):
         
         # Declare the fuzzy controller, add the rules 
         # This is an instance variable, and thus available for other methods in the same object. See notes.                         
-        # self.targeting_control = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, rule10, rule11, rule12, rule13, rule14, rule15])
+        # self.targetingControl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, rule10, rule11, rule12, rule13, rule14, rule15])
              
-        self.targeting_control = ctrl.ControlSystem()
-        self.targeting_control.addrule(rule1)
-        self.targeting_control.addrule(rule2)
-        self.targeting_control.addrule(rule3)
-        self.targeting_control.addrule(rule4)
-        self.targeting_control.addrule(rule5)
-        self.targeting_control.addrule(rule6)
-        self.targeting_control.addrule(rule7)
-        self.targeting_control.addrule(rule8)
-        self.targeting_control.addrule(rule9)
-        self.targeting_control.addrule(rule10)
-        self.targeting_control.addrule(rule11)
-        self.targeting_control.addrule(rule12)
-        self.targeting_control.addrule(rule13)
-        self.targeting_control.addrule(rule14)
-        self.targeting_control.addrule(rule15)
+        self.targetingControl = ctrl.ControlSystem()
+        self.targetingControl.addrule(rule1)
+        self.targetingControl.addrule(rule2)
+        self.targetingControl.addrule(rule3)
+        self.targetingControl.addrule(rule4)
+        self.targetingControl.addrule(rule5)
+        self.targetingControl.addrule(rule6)
+        self.targetingControl.addrule(rule7)
+        self.targetingControl.addrule(rule8)
+        self.targetingControl.addrule(rule9)
+        self.targetingControl.addrule(rule10)
+        self.targetingControl.addrule(rule11)
+        self.targetingControl.addrule(rule12)
+        self.targetingControl.addrule(rule13)
+        self.targetingControl.addrule(rule14)
+        self.targetingControl.addrule(rule15)
 
     def initMoveControl(self):
         nearestAsteroidDistance = ctrl.Antecedent(np.arange(0, 250, 2), "asteroid_distance")
-        movementSpeed = ctrl.Consequent(np.arange(-300, 300, 1), 'ship_thrust')
+        currVelocity = ctrl.Antecedent(np.arange(-300, 300, 1), 'curr_velocity')
+        thrust = ctrl.Consequent(np.arange(-300, 300, 1), 'ship_thrust')
 
         # C = close, M = medium, F = far
-        nearestAsteroidDistance["C"] = fuzz.trimf(nearestAsteroidDistance.universe, [0, 0, 80])
-        nearestAsteroidDistance["M"] = fuzz.trimf(nearestAsteroidDistance.universe, [30, 120, 210])
-        nearestAsteroidDistance["F"] = fuzz.trimf(nearestAsteroidDistance.universe, [160, 250, 250])
+        nearestAsteroidDistance["C"] = fuzz.trimf(nearestAsteroidDistance.universe, [0, 0, 150])
+        nearestAsteroidDistance["M"] = fuzz.trimf(nearestAsteroidDistance.universe, [120, 200, 300])
+        nearestAsteroidDistance["F"] = fuzz.trimf(nearestAsteroidDistance.universe, [200, 400, 400])
 
         # first letter: F = forwards, R = reverse
         # Second letter is F = Fast, S = Slow
         # St = stationary
-        movementSpeed["RF"] = fuzz.trimf(movementSpeed.universe, [-300, -200, -100])
-        movementSpeed["RS"] = fuzz.trimf(movementSpeed.universe, [-200, -100, 0])
-        movementSpeed["St"] = fuzz.trimf(movementSpeed.universe, [-100, 0, 100])
-        movementSpeed["FF"] = fuzz.trimf(movementSpeed.universe, [300, 200, 100])
-        movementSpeed["FS"] = fuzz.trimf(movementSpeed.universe, [200, 100, 0])
+        currVelocity["RF"] = fuzz.trimf(currVelocity.universe, [-300, -200, -100])
+        currVelocity["RS"] = fuzz.trimf(currVelocity.universe, [-200, -100, 0])
+        currVelocity["St"] = fuzz.trimf(currVelocity.universe, [-100, 0, 100])
+        currVelocity["FF"] = fuzz.trimf(currVelocity.universe, [100, 200, 300])
+        currVelocity["FS"] = fuzz.trimf(currVelocity.universe, [0, 100, 200])
 
-        rule1 = ctrl.Rule(nearestAsteroidDistance["C"], movementSpeed["RF"])
-        rule2 = ctrl.Rule(nearestAsteroidDistance["M"], movementSpeed["RS"])
-        rule3 = ctrl.Rule(nearestAsteroidDistance["F"], movementSpeed["FS"])
+        # first letter: F = forwards, R = reverse
+        # Second letter is F = Fast, S = Slow
+        # St = stationary
+        thrust["RF"] = fuzz.trimf(thrust.universe, [-300, -200, -100])
+        thrust["RS"] = fuzz.trimf(thrust.universe, [-200, -100, 0])
+        thrust["St"] = fuzz.trimf(thrust.universe, [-100, 0, 100])
+        thrust["FF"] = fuzz.trimf(thrust.universe, [100, 200, 300])
+        thrust["FS"] = fuzz.trimf(thrust.universe, [0, 100, 200])
 
+        rule1 = ctrl.Rule(nearestAsteroidDistance["C"] & currVelocity['RF'], thrust["St"])
+        rule2 = ctrl.Rule(nearestAsteroidDistance["C"] & currVelocity['RS'], thrust["RS"])
+        rule3 = ctrl.Rule(nearestAsteroidDistance["C"] & currVelocity["St"], thrust["RF"])
+        rule4 = ctrl.Rule(nearestAsteroidDistance["C"] & (currVelocity["FF"] | currVelocity["FS"]), thrust["RF"])
 
+        rule5 = ctrl.Rule(nearestAsteroidDistance["M"] & currVelocity["RF"], thrust["FS"])
+        rule6 = ctrl.Rule(nearestAsteroidDistance["M"] & currVelocity["RS"], thrust["St"])
+        rule7 = ctrl.Rule(nearestAsteroidDistance["M"] & currVelocity["St"], thrust["St"])
+        rule8 = ctrl.Rule(nearestAsteroidDistance["M"] & (currVelocity["FF"] | currVelocity["FS"]), thrust["RF"])
 
+        rule9 = ctrl.Rule(nearestAsteroidDistance["F"] & currVelocity["RF"], thrust["FF"])
+        rule10 = ctrl.Rule(nearestAsteroidDistance["F"] & currVelocity["RS"], thrust["FS"])
+        rule11 = ctrl.Rule(nearestAsteroidDistance["F"] & currVelocity["St"], thrust["St"])
+        rule12 = ctrl.Rule(nearestAsteroidDistance["F"] & currVelocity["FS"], thrust["St"])
+        rule13 = ctrl.Rule(nearestAsteroidDistance["F"] & currVelocity["FF"], thrust["RS"])
+
+        self.thrustControl = ctrl.ControlSystem()
+
+        self.thrustControl.addrule(rule1)
+        self.thrustControl.addrule(rule2)
+        self.thrustControl.addrule(rule3)  
+        self.thrustControl.addrule(rule4)  
+        self.thrustControl.addrule(rule5)
+        self.thrustControl.addrule(rule6)
+        self.thrustControl.addrule(rule7)
+        self.thrustControl.addrule(rule8)
+        self.thrustControl.addrule(rule9)
+        self.thrustControl.addrule(rule10)
+        self.thrustControl.addrule(rule11)
+        self.thrustControl.addrule(rule12)
+        self.thrustControl.addrule(rule13)  
         
-
-
-        
-
-
-        nearestAsteroidDistance.view()
-        input()
-        
-        
-
-    def actions(self, ship_state: Dict, game_state: Dict) -> Tuple[float, float, bool]:
-        """
-        Method processed each time step by this controller.
-        """
-        # These were the constant actions in the basic demo, just spinning and shooting.
-        #thrust = 0 <- How do the values scale with asteroid velocity vector?
-        #turn_rate = 90 <- How do the values scale with asteroid velocity vector?
-        
-        # Answers: Asteroid position and velocity are split into their x,y components in a 2-element ?array each.
-        # So are the ship position and velocity, and bullet position and velocity. 
-        # Units appear to be meters relative to origin (where?), m/sec, m/sec^2 for thrust.
-        # Everything happens in a time increment: delta_time, which appears to be 1/30 sec; this is hardcoded in many places.
-        # So, position is updated by multiplying velocity by delta_time, and adding that to position.
-        # Ship velocity is updated by multiplying thrust by delta time.
-        # Ship position for this time increment is updated after the the thrust was applied.
-        
-
-        # My demonstration controller does not move the ship, only rotates it to shoot the nearest asteroid.
-        # Goal: demonstrate processing of game state, fuzzy controller, intercept computation 
-        # Intercept-point calculation derived from the Law of Cosines, see notes for details and citation.
-
-        # Find the closest asteroid (disregards asteroid velocity)
-        ship_pos_x = ship_state["position"][0]     # See src/kesslergame/ship.py in the KesslerGame Github
-        ship_pos_y = ship_state["position"][1]       
+    def getClosestAsteroid(self, ship_pos_x, ship_pos_y, game_state):
+        # Find the closest asteroid (disregards asteroid velocity)      
         closest_asteroid = None
         
         for a in game_state["asteroids"]:
@@ -185,14 +189,9 @@ class SmartController(KesslerController):
                     closest_asteroid["dist"] = curr_dist
 
         # closest_asteroid is now the nearest asteroid object. 
-        # Calculate intercept time given ship & asteroid position, asteroid velocity vector, bullet speed (not direction).
-        # Based on Law of Cosines calculation, see notes.
-        
-        # Side D of the triangle is given by closest_asteroid.dist. Need to get the asteroid-ship direction
-        #    and the angle of the asteroid's current movement.
-        # REMEMBER TRIG FUNCTIONS ARE ALL IN RADAINS!!!
-        
-        
+        return closest_asteroid
+    
+    def getShootingInputs(self, ship_pos_x, ship_pos_y, ship_state, closest_asteroid):
         asteroid_ship_x = ship_pos_x - closest_asteroid["aster"]["position"][0]
         asteroid_ship_y = ship_pos_y - closest_asteroid["aster"]["position"][1]
         
@@ -235,14 +234,78 @@ class SmartController(KesslerController):
         
         # Wrap all angles to (-pi, pi)
         shooting_theta = (shooting_theta + math.pi) % (2 * math.pi) - math.pi
+
+        return bullet_t, shooting_theta
+    
+    def getRelativeVelocity(self, absVelX, absVelY, shipHeading):
+        """Get the velocity as a magnitude relative to where the ship is facing.
+        i.e. moving backwards is -1, forwards is +1.
+
+        Args:
+            absVelX (int): Absolute x-velocity 
+            absVelY (int): Absolute y-velocity
+            shipHeading (int): Ship heading in degrees
+
+        Returns:
+            relVel (int): velocity with respect to heading
+        """
+        # Convert heading to radians
+        heading_rad = math.radians(shipHeading)
+        
+        # Calculate the relative velocity component along the heading direction
+        relVel = (absVelX * math.cos(heading_rad)) + (absVelY * math.sin(heading_rad))
+
+        return relVel
+
+    def actions(self, ship_state: Dict, game_state: Dict) -> Tuple[float, float, bool]:
+        """
+        Method processed each time step by this controller.
+        """
+        # These were the constant actions in the basic demo, just spinning and shooting.
+        #thrust = 0 <- How do the values scale with asteroid velocity vector?
+        #turn_rate = 90 <- How do the values scale with asteroid velocity vector?
+        
+        # Answers: Asteroid position and velocity are split into their x,y components in a 2-element ?array each.
+        # So are the ship position and velocity, and bullet position and velocity. 
+        # Units appear to be meters relative to origin (where?), m/sec, m/sec^2 for thrust.
+        # Everything happens in a time increment: delta_time, which appears to be 1/30 sec; this is hardcoded in many places.
+        # So, position is updated by multiplying velocity by delta_time, and adding that to position.
+        # Ship velocity is updated by multiplying thrust by delta time.
+        # Ship position for this time increment is updated after the the thrust was applied.
+        
+
+        # My demonstration controller does not move the ship, only rotates it to shoot the nearest asteroid.
+        # Goal: demonstrate processing of game state, fuzzy controller, intercept computation 
+        # Intercept-point calculation derived from the Law of Cosines, see notes for details and citation.
+
+
+        # Calculate intercept time given ship & asteroid position, asteroid velocity vector, bullet speed (not direction).
+        # Based on Law of Cosines calculation, see notes.
+        
+        # Side D of the triangle is given by closest_asteroid.dist. Need to get the asteroid-ship direction
+        #    and the angle of the asteroid's current movement.
+        # REMEMBER TRIG FUNCTIONS ARE ALL IN RADAINS!!!
+
+        ship_pos_x = ship_state["position"][0]     # See src/kesslergame/ship.py in the KesslerGame Github
+        ship_pos_y = ship_state["position"][1]    
+
+        closest_asteroid = self.getClosestAsteroid(ship_pos_x, ship_pos_y, game_state)
+        bullet_t, shooting_theta = self.getShootingInputs(ship_pos_x, ship_pos_y, ship_state, closest_asteroid)
+
+        relativeVelocity = self.getRelativeVelocity(*ship_state["velocity"], ship_state["heading"])
         
         # Pass the inputs to the rulebase and fire it
-        shooting = ctrl.ControlSystemSimulation(self.targeting_control,flush_after_run=1)
-        
+        shooting = ctrl.ControlSystemSimulation(self.targetingControl,flush_after_run=1)
         shooting.input['bullet_time'] = bullet_t
         shooting.input['theta_delta'] = shooting_theta
+
+        # Pass inputs to movement control
+        thrust = ctrl.ControlSystemSimulation(self.thrustControl, flush_after_run=1)
+        thrust.input["asteroid_distance"] = closest_asteroid["dist"]
+        thrust.input["curr_velocity"] = relativeVelocity
         
         shooting.compute()
+        thrust.compute()
         
         # Get the defuzzified outputs
         turn_rate = shooting.output['ship_turn']
@@ -253,7 +316,7 @@ class SmartController(KesslerController):
             fire = False
                
         # And return your three outputs to the game simulation. Controller algorithm complete.
-        thrust = 0.0
+        applyThrust = thrust.output["ship_thrust"]
         
         self.eval_frames +=1
 
@@ -261,9 +324,9 @@ class SmartController(KesslerController):
         drop_mine = False
         
         #DEBUG
-        print(thrust, bullet_t, shooting_theta, turn_rate, fire, drop_mine)
+        # print(thrust, bullet_t, shooting_theta, turn_rate, fire, drop_mine)
         
-        return thrust, turn_rate, fire, drop_mine
+        return applyThrust, turn_rate, fire, drop_mine
 
     @property
     def name(self) -> str:
