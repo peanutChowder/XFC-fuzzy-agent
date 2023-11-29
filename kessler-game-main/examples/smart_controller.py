@@ -27,6 +27,13 @@ class SmartController(KesslerController):
 
         # self.targeting_control is the targeting rulebase, which is static in this controller.      
         # Declare variables
+
+        self.targeting_control = None
+
+        self.initTargetControl()
+        self.initMoveControl()
+
+    def initTargetControl(self):
         bullet_time = ctrl.Antecedent(np.arange(0,1.0,0.002), 'bullet_time')
         theta_delta = ctrl.Antecedent(np.arange(-1*math.pi,math.pi,0.1), 'theta_delta') # Radians due to Python
         ship_turn = ctrl.Consequent(np.arange(-180,180,1), 'ship_turn') # Degrees due to Kessler
@@ -102,7 +109,7 @@ class SmartController(KesslerController):
         self.targeting_control.addrule(rule14)
         self.targeting_control.addrule(rule15)
 
-    def initMoveSystem(self):
+    def initMoveControl(self):
         nearestAsteroidDistance = ctrl.Antecedent(np.arange(0, 250, 2), "asteroid_distance")
         movementSpeed = ctrl.Consequent(np.arange(-300, 300, 1), 'ship_thrust')
 
@@ -119,6 +126,16 @@ class SmartController(KesslerController):
         movementSpeed["St"] = fuzz.trimf(movementSpeed.universe, [-100, 0, 100])
         movementSpeed["FF"] = fuzz.trimf(movementSpeed.universe, [300, 200, 100])
         movementSpeed["FS"] = fuzz.trimf(movementSpeed.universe, [200, 100, 0])
+
+        rule1 = ctrl.Rule(nearestAsteroidDistance["C"], movementSpeed["RF"])
+        rule2 = ctrl.Rule(nearestAsteroidDistance["M"], movementSpeed["RS"])
+        rule3 = ctrl.Rule(nearestAsteroidDistance["F"], movementSpeed["FS"])
+
+
+
+        
+
+
         
 
 
