@@ -236,6 +236,26 @@ class SmartController(KesslerController):
         shooting_theta = (shooting_theta + math.pi) % (2 * math.pi) - math.pi
 
         return bullet_t, shooting_theta
+    
+    def getRelativeVelocity(self, absVelX, absVelY, shipHeading):
+        """Get the velocity as a magnitude relative to where the ship is facing.
+        i.e. moving backwards is -1, forwards is +1.
+
+        Args:
+            absVelX (int): Absolute x-velocity 
+            absVelY (int): Absolute y-velocity
+            shipHeading (int): Ship heading in degrees
+
+        Returns:
+            relVel (int): velocity with respect to heading
+        """
+        # Convert heading to radians
+        heading_rad = math.radians(shipHeading)
+        
+        # Calculate the relative velocity component along the heading direction
+        relVel = (absVelX * math.cos(heading_rad)) + (absVelY * math.sin(heading_rad))
+
+        return relVel
 
     def actions(self, ship_state: Dict, game_state: Dict) -> Tuple[float, float, bool]:
         """
@@ -269,9 +289,10 @@ class SmartController(KesslerController):
         ship_pos_x = ship_state["position"][0]     # See src/kesslergame/ship.py in the KesslerGame Github
         ship_pos_y = ship_state["position"][1]    
 
-        closest_asteroid = self.getClosestAsteroid(ship_pos_x, ship_pos_y, ship_state, game_state)
-        
+        closest_asteroid = self.getClosestAsteroid(ship_pos_x, ship_pos_y, game_state)
         bullet_t, shooting_theta = self.getShootingInputs(ship_pos_x, ship_pos_y, ship_state, closest_asteroid)
+
+        relativeVelocity = self.getRelativeVelocity(*ship_state["velocity"], ship_state["heading"])
         
         # Pass the inputs to the rulebase and fire it
         shooting = ctrl.ControlSystemSimulation(self.targetingControl,flush_after_run=1)
@@ -283,7 +304,7 @@ class SmartController(KesslerController):
         thrust.input["asteroid_distance"] = closest_asteroid["dist"]
         print(ship_state["velocity"])
         print(ship_state["heading"])
-        thrust.input["curr_velocity"] = ship_state["velocity"]
+        thrust.input["curr_velocity"] = relativeVelocity
         
         shooting.compute()
         thrust.compute()
