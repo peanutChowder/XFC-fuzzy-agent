@@ -25,10 +25,11 @@ class SmartController(KesslerController):
     def __init__(self):
         self.eval_frames = 0 #What is this?
 
-        # self.targeting_control is the targeting rulebase, which is static in this controller.      
+        # self.targetingControl is the targeting rulebase, which is static in this controller.      
         # Declare variables
 
-        self.targeting_control = None
+        self.targetingControl = None
+        self.movementControl = None
 
         self.initTargetControl()
         self.initMoveControl()
@@ -90,24 +91,24 @@ class SmartController(KesslerController):
         
         # Declare the fuzzy controller, add the rules 
         # This is an instance variable, and thus available for other methods in the same object. See notes.                         
-        # self.targeting_control = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, rule10, rule11, rule12, rule13, rule14, rule15])
+        # self.targetingControl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, rule10, rule11, rule12, rule13, rule14, rule15])
              
-        self.targeting_control = ctrl.ControlSystem()
-        self.targeting_control.addrule(rule1)
-        self.targeting_control.addrule(rule2)
-        self.targeting_control.addrule(rule3)
-        self.targeting_control.addrule(rule4)
-        self.targeting_control.addrule(rule5)
-        self.targeting_control.addrule(rule6)
-        self.targeting_control.addrule(rule7)
-        self.targeting_control.addrule(rule8)
-        self.targeting_control.addrule(rule9)
-        self.targeting_control.addrule(rule10)
-        self.targeting_control.addrule(rule11)
-        self.targeting_control.addrule(rule12)
-        self.targeting_control.addrule(rule13)
-        self.targeting_control.addrule(rule14)
-        self.targeting_control.addrule(rule15)
+        self.targetingControl = ctrl.ControlSystem()
+        self.targetingControl.addrule(rule1)
+        self.targetingControl.addrule(rule2)
+        self.targetingControl.addrule(rule3)
+        self.targetingControl.addrule(rule4)
+        self.targetingControl.addrule(rule5)
+        self.targetingControl.addrule(rule6)
+        self.targetingControl.addrule(rule7)
+        self.targetingControl.addrule(rule8)
+        self.targetingControl.addrule(rule9)
+        self.targetingControl.addrule(rule10)
+        self.targetingControl.addrule(rule11)
+        self.targetingControl.addrule(rule12)
+        self.targetingControl.addrule(rule13)
+        self.targetingControl.addrule(rule14)
+        self.targetingControl.addrule(rule15)
 
     def initMoveControl(self):
         nearestAsteroidDistance = ctrl.Antecedent(np.arange(0, 250, 2), "asteroid_distance")
@@ -124,24 +125,18 @@ class SmartController(KesslerController):
         movementSpeed["RF"] = fuzz.trimf(movementSpeed.universe, [-300, -200, -100])
         movementSpeed["RS"] = fuzz.trimf(movementSpeed.universe, [-200, -100, 0])
         movementSpeed["St"] = fuzz.trimf(movementSpeed.universe, [-100, 0, 100])
-        movementSpeed["FF"] = fuzz.trimf(movementSpeed.universe, [300, 200, 100])
-        movementSpeed["FS"] = fuzz.trimf(movementSpeed.universe, [200, 100, 0])
+        movementSpeed["FF"] = fuzz.trimf(movementSpeed.universe, [100, 200, 300])
+        movementSpeed["FS"] = fuzz.trimf(movementSpeed.universe, [0, 100, 200])
 
         rule1 = ctrl.Rule(nearestAsteroidDistance["C"], movementSpeed["RF"])
         rule2 = ctrl.Rule(nearestAsteroidDistance["M"], movementSpeed["RS"])
         rule3 = ctrl.Rule(nearestAsteroidDistance["F"], movementSpeed["FS"])
 
+        self.movementControl = ctrl.ControlSystem()
 
-
-        
-
-
-        
-
-
-        nearestAsteroidDistance.view()
-        input()
-        
+        self.movementControl.addrule(rule1)
+        self.movementControl.addrule(rule2)
+        self.movementControl.addrule(rule3)  
         
 
     def actions(self, ship_state: Dict, game_state: Dict) -> Tuple[float, float, bool]:
@@ -237,12 +232,16 @@ class SmartController(KesslerController):
         shooting_theta = (shooting_theta + math.pi) % (2 * math.pi) - math.pi
         
         # Pass the inputs to the rulebase and fire it
-        shooting = ctrl.ControlSystemSimulation(self.targeting_control,flush_after_run=1)
-        
+        shooting = ctrl.ControlSystemSimulation(self.targetingControl,flush_after_run=1)
         shooting.input['bullet_time'] = bullet_t
         shooting.input['theta_delta'] = shooting_theta
+
+        # Pass inputs to movement control
+        movement = ctrl.ControlSystemSimulation(self.movementControl, flush_after_run=1)
+        movement.input["asteroid_distance"] = closest_asteroid["dist"]
         
         shooting.compute()
+        movement.compute()
         
         # Get the defuzzified outputs
         turn_rate = shooting.output['ship_turn']
@@ -253,7 +252,7 @@ class SmartController(KesslerController):
             fire = False
                
         # And return your three outputs to the game simulation. Controller algorithm complete.
-        thrust = 0.0
+        thrust = movement.output["ship_thrust"]
         
         self.eval_frames +=1
 
