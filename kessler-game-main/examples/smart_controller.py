@@ -18,7 +18,7 @@ import matplotlib as plt
 
 
 
-class ScottDickController(KesslerController):
+class SmartController(KesslerController):
     
     
         
@@ -101,6 +101,29 @@ class ScottDickController(KesslerController):
         self.targeting_control.addrule(rule13)
         self.targeting_control.addrule(rule14)
         self.targeting_control.addrule(rule15)
+
+    def initMoveSystem(self):
+        nearestAsteroidDistance = ctrl.Antecedent(np.arange(0, 250, 2), "asteroid_distance")
+        movementSpeed = ctrl.Consequent(np.arange(-300, 300, 1), 'ship_thrust')
+
+        # C = close, M = medium, F = far
+        nearestAsteroidDistance["C"] = fuzz.trimf(nearestAsteroidDistance.universe, [0, 0, 80])
+        nearestAsteroidDistance["M"] = fuzz.trimf(nearestAsteroidDistance.universe, [30, 120, 210])
+        nearestAsteroidDistance["F"] = fuzz.trimf(nearestAsteroidDistance.universe, [160, 250, 250])
+
+        # first letter: F = forwards, R = reverse
+        # Second letter is F = Fast, S = Slow
+        # St = stationary
+        movementSpeed["RF"] = fuzz.trimf(movementSpeed.universe, [-300, -200, -100])
+        movementSpeed["RS"] = fuzz.trimf(movementSpeed.universe, [-200, -100, 0])
+        movementSpeed["St"] = fuzz.trimf(movementSpeed.universe, [-100, 0, 100])
+        movementSpeed["FF"] = fuzz.trimf(movementSpeed.universe, [300, 200, 100])
+        movementSpeed["FS"] = fuzz.trimf(movementSpeed.universe, [200, 100, 0])
+        
+
+
+        nearestAsteroidDistance.view()
+        input()
         
         
 
@@ -228,3 +251,8 @@ class ScottDickController(KesslerController):
     @property
     def name(self) -> str:
         return "Smart Controller"
+    
+if __name__ == "__main__":
+    sc = SmartController()
+
+    sc.initMoveSystem()
