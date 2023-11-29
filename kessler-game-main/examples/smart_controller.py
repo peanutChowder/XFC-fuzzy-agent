@@ -29,7 +29,7 @@ class SmartController(KesslerController):
         # Declare variables
 
         self.targetingControl = None
-        self.movementControl = None
+        self.thrustControl = None
 
         self.initTargetControl()
         self.initMoveControl()
@@ -112,7 +112,8 @@ class SmartController(KesslerController):
 
     def initMoveControl(self):
         nearestAsteroidDistance = ctrl.Antecedent(np.arange(0, 250, 2), "asteroid_distance")
-        movementSpeed = ctrl.Consequent(np.arange(-300, 300, 1), 'ship_thrust')
+        currVelocity = ctrl.Antecedent(np.arange(-300, 300, 1), 'curr_velocity')
+        thrust = ctrl.Consequent(np.arange(-300, 300, 1), 'ship_thrust')
 
         # C = close, M = medium, F = far
         nearestAsteroidDistance["C"] = fuzz.trimf(nearestAsteroidDistance.universe, [0, 0, 80])
@@ -122,21 +123,53 @@ class SmartController(KesslerController):
         # first letter: F = forwards, R = reverse
         # Second letter is F = Fast, S = Slow
         # St = stationary
-        movementSpeed["RF"] = fuzz.trimf(movementSpeed.universe, [-300, -200, -100])
-        movementSpeed["RS"] = fuzz.trimf(movementSpeed.universe, [-200, -100, 0])
-        movementSpeed["St"] = fuzz.trimf(movementSpeed.universe, [-100, 0, 100])
-        movementSpeed["FF"] = fuzz.trimf(movementSpeed.universe, [100, 200, 300])
-        movementSpeed["FS"] = fuzz.trimf(movementSpeed.universe, [0, 100, 200])
+        currVelocity["RF"] = fuzz.trimf(currVelocity.universe, [-300, -200, -100])
+        currVelocity["RS"] = fuzz.trimf(currVelocity.universe, [-200, -100, 0])
+        currVelocity["St"] = fuzz.trimf(currVelocity.universe, [-100, 0, 100])
+        currVelocity["FF"] = fuzz.trimf(currVelocity.universe, [100, 200, 300])
+        currVelocity["FS"] = fuzz.trimf(currVelocity.universe, [0, 100, 200])
 
-        rule1 = ctrl.Rule(nearestAsteroidDistance["C"], movementSpeed["RF"])
-        rule2 = ctrl.Rule(nearestAsteroidDistance["M"], movementSpeed["RS"])
-        rule3 = ctrl.Rule(nearestAsteroidDistance["F"], movementSpeed["FS"])
+        # first letter: F = forwards, R = reverse
+        # Second letter is F = Fast, S = Slow
+        # St = stationary
+        thrust["RF"] = fuzz.trimf(thrust.universe, [-300, -200, -100])
+        thrust["RS"] = fuzz.trimf(thrust.universe, [-200, -100, 0])
+        thrust["St"] = fuzz.trimf(thrust.universe, [-100, 0, 100])
+        thrust["FF"] = fuzz.trimf(thrust.universe, [100, 200, 300])
+        thrust["FS"] = fuzz.trimf(thrust.universe, [0, 100, 200])
 
-        self.movementControl = ctrl.ControlSystem()
+        rule1 = ctrl.Rule(nearestAsteroidDistance["C"] & currVelocity['RF'], thrust["St"])
+        rule2 = ctrl.Rule(nearestAsteroidDistance["C"] & currVelocity['RS'], thrust["RS"])
+        rule3 = ctrl.Rule(nearestAsteroidDistance["C"] & currVelocity["St"], thrust["RF"])
+        rule4 = ctrl.Rule(nearestAsteroidDistance["C"] & (currVelocity["FF"] | currVelocity["FS"]), thrust["RF"])
 
-        self.movementControl.addrule(rule1)
-        self.movementControl.addrule(rule2)
-        self.movementControl.addrule(rule3)  
+        rule5 = ctrl.Rule(nearestAsteroidDistance["M"] & currVelocity["RF"], thrust["FS"])
+        rule6 = ctrl.Rule(nearestAsteroidDistance["M"] & currVelocity["RS"], thrust["St"])
+        rule7 = ctrl.Rule(nearestAsteroidDistance["M"] & currVelocity["St"], thrust["St"])
+        rule8 = ctrl.Rule(nearestAsteroidDistance["M"] & (currVelocity["FF"] | currVelocity["FS"]), thrust["RF"])
+
+        rule9 = ctrl.Rule(nearestAsteroidDistance["F"] & currVelocity["RF"], thrust["FF"])
+        rule10 = ctrl.Rule(nearestAsteroidDistance["F"] & currVelocity["RS"], thrust["FS"])
+        rule11 = ctrl.Rule(nearestAsteroidDistance["F"] & currVelocity["St"], thrust["St"])
+        rule12 = ctrl.Rule(nearestAsteroidDistance["F"] & currVelocity["FS"], thrust["St"])
+        rule13 = ctrl.Rule(nearestAsteroidDistance["F"] & currVelocity["FF"], thrust["RS"])
+
+        self.thrustControl = ctrl.ControlSystem()
+
+        self.thrustControl.addrule(rule1)
+        self.thrustControl.addrule(rule2)
+        self.thrustControl.addrule(rule3)  
+        self.thrustControl.addrule(rule4)  
+        self.thrustControl.addrule(rule5)
+        self.thrustControl.addrule(rule6)
+        self.thrustControl.addrule(rule7)
+        self.thrustControl.addrule(rule8)
+        self.thrustControl.addrule(rule9)
+        self.thrustControl.addrule(rule10)
+        self.thrustControl.addrule(rule11)
+        self.thrustControl.addrule(rule12)
+        self.thrustControl.addrule(rule13)  
+        
         
 
     def actions(self, ship_state: Dict, game_state: Dict) -> Tuple[float, float, bool]:
@@ -237,11 +270,14 @@ class SmartController(KesslerController):
         shooting.input['theta_delta'] = shooting_theta
 
         # Pass inputs to movement control
-        movement = ctrl.ControlSystemSimulation(self.movementControl, flush_after_run=1)
-        movement.input["asteroid_distance"] = closest_asteroid["dist"]
+        thrust = ctrl.ControlSystemSimulation(self.thrustControl, flush_after_run=1)
+        thrust.input["asteroid_distance"] = closest_asteroid["dist"]
+        print(ship_state["velocity"])
+        print(ship_state["heading"])
+        thrust.input["curr_velocity"] = ship_state["velocity"]
         
         shooting.compute()
-        movement.compute()
+        thrust.compute()
         
         # Get the defuzzified outputs
         turn_rate = shooting.output['ship_turn']
@@ -252,7 +288,7 @@ class SmartController(KesslerController):
             fire = False
                
         # And return your three outputs to the game simulation. Controller algorithm complete.
-        thrust = movement.output["ship_thrust"]
+        applyThrust = thrust.output["ship_thrust"]
         
         self.eval_frames +=1
 
@@ -262,7 +298,7 @@ class SmartController(KesslerController):
         #DEBUG
         print(thrust, bullet_t, shooting_theta, turn_rate, fire, drop_mine)
         
-        return thrust, turn_rate, fire, drop_mine
+        return applyThrust, turn_rate, fire, drop_mine
 
     @property
     def name(self) -> str:
