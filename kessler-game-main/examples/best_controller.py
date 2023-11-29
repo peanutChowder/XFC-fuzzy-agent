@@ -31,6 +31,8 @@ class BestController(KesslerController):
         theta_delta = ctrl.Antecedent(np.arange(-1*math.pi,math.pi,0.1), 'theta_delta') # Radians due to Python
         ship_turn = ctrl.Consequent(np.arange(-180,180,1), 'ship_turn') # Degrees due to Kessler
         ship_fire = ctrl.Consequent(np.arange(-1,1,0.1), 'ship_fire')#
+        ship_turn_for_thrust = ctrl.Antecedent(np.arange(-180,180,1),'ship_turn_for_thrust')
+        ship_fire_for_thrust = ctrl.Antecedent(np.arange(-1,1,0.1), 'ship_fire_for_thrust')
         ship_thrust = ctrl.Consequent(np.arange(-180,180,1), 'ship_thrust')
         
         #Declare fuzzy sets for bullet_time (how long it takes for the bullet to reach the intercept point)
@@ -51,11 +53,22 @@ class BestController(KesslerController):
         ship_turn['Z'] = fuzz.trimf(ship_turn.universe, [-30,0,30])
         ship_turn['PS'] = fuzz.trimf(ship_turn.universe, [0,30,90])
         ship_turn['PL'] = fuzz.trimf(ship_turn.universe, [30,180,180])
+
+        #Declare fuzzy sets for ship_turn_for_thrust
+        ship_turn_for_thrust['NL'] = fuzz.trimf(ship_turn.universe, [-180,-180,-30])
+        ship_turn_for_thrust['NS'] = fuzz.trimf(ship_turn.universe, [-90,-30,0])
+        ship_turn_for_thrust['Z'] = fuzz.trimf(ship_turn.universe, [-30,0,30])
+        ship_turn_for_thrust['PS'] = fuzz.trimf(ship_turn.universe, [0,30,90])
+        ship_turn_for_thrust['PL'] = fuzz.trimf(ship_turn.universe, [30,180,180])
         
         #Declare singleton fuzzy sets for the ship_fire consequent; -1 -> don't fire, +1 -> fire; this will be  thresholded
         #   and returned as the boolean 'fire'
         ship_fire['N'] = fuzz.trimf(ship_fire.universe, [-1,-1,0.0])
         ship_fire['Y'] = fuzz.trimf(ship_fire.universe, [0.0,1,1])
+
+        #Declare fuzzy sets for ship_fire_for_thrust
+        ship_fire_for_thrust['N'] = fuzz.trimf(ship_fire.universe, [-1,-1,0.0])
+        ship_fire_for_thrust['Y'] = fuzz.trimf(ship_fire.universe, [0.0,1,1])
 
         #Declare fuzzy sets for the ship_thrust consequent; will be returned as thrust
         ship_thrust['NL'] = fuzz.trimf(ship_thrust.universe, [-180,-180,-30])
@@ -80,13 +93,12 @@ class BestController(KesslerController):
         rule13 = ctrl.Rule(bullet_time['S'] & theta_delta['Z'], (ship_turn['Z'], ship_fire['Y']))
         rule14 = ctrl.Rule(bullet_time['S'] & theta_delta['PS'], (ship_turn['PS'], ship_fire['Y']))
         rule15 = ctrl.Rule(bullet_time['S'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['Y']))
-        rule16 = ctrl.Rule(bullet_time['L'], (ship_thrust['NS']))
-        rule17 = ctrl.Rule(bullet_time['M'], (ship_thrust['Z']))
-        rule18 = ctrl.Rule(bullet_time['S'] & theta_delta['NL'], (ship_thrust['NS']))
-        rule19 = ctrl.Rule(bullet_time['S'] & theta_delta['NS'], (ship_thrust['NL']))
-        rule20 = ctrl.Rule(bullet_time['S'] & theta_delta['Z'], (ship_thrust['NL']))
-        rule21 = ctrl.Rule(bullet_time['S'] & theta_delta['PS'], (ship_thrust['NL']))
-        rule22 = ctrl.Rule(bullet_time['S'] & theta_delta['PL'], (ship_thrust['NS']))
+
+        #Declare fuzzy rules for thrust
+        rule16 = ctrl.Rule(ship_turn_for_thrust['NL'] | ship_turn_for_thrust['PL'] & ship_fire_for_thrust['N'], (ship_thrust['NS']))
+        rule17 = ctrl.Rule(ship_turn_for_thrust['NL'] | ship_turn_for_thrust['PL'] & ship_fire_for_thrust['Y'], (ship_thrust['NS']))
+        rule18 = ctrl.Rule(ship_turn_for_thrust['NS'] | ship_turn_for_thrust['PS'] & ship_fire_for_thrust['Y'], (ship_thrust['NL']))
+        rule19 = ctrl.Rule(ship_turn_for_thrust['Z'], (ship_thrust['NS']))
      
         #DEBUG
         #bullet_time.view()
@@ -116,13 +128,13 @@ class BestController(KesslerController):
         self.targeting_control.addrule(rule13)
         self.targeting_control.addrule(rule14)
         self.targeting_control.addrule(rule15)
-        self.targeting_control.addrule(rule16)
-        self.targeting_control.addrule(rule17)
-        self.targeting_control.addrule(rule18)
-        self.targeting_control.addrule(rule19)
-        self.targeting_control.addrule(rule20)
-        self.targeting_control.addrule(rule21)
-        self.targeting_control.addrule(rule22)
+
+        #Declare fuzzy controller for thrust
+        self.thrust_control = ctrl.ControlSystem()
+        self.thrust_control.addrule(rule16)
+        self.thrust_control.addrule(rule17)
+        self.thrust_control.addrule(rule18)
+        self.thrust_control.addrule(rule19)
         
         
 
@@ -233,9 +245,17 @@ class BestController(KesslerController):
             fire = True
         else:
             fire = False
-               
+
+
+        # Pass the inputs to the rulebase and fire it
+        shooting_thrust = ctrl.ControlSystemSimulation(self.thrust_control,flush_after_run=1)
+        
+        shooting_thrust.input['ship_turn_for_thrust'] = shooting.output['ship_turn']
+        shooting_thrust.input['ship_fire_for_thrust'] = shooting.output['ship_fire']
+        
+        shooting_thrust.compute()
         # And return your three outputs to the game simulation. Controller algorithm complete.
-        thrust = shooting.output['ship_thrust']
+        thrust = shooting_thrust.output['ship_thrust']
         
         self.eval_frames +=1
 
