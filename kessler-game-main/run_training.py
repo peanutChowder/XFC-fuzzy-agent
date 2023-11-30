@@ -8,12 +8,12 @@ from examples.scott_dick_controller import ScottDickController
 from examples.smart_controller import SmartController
 from examples.graphics_both import GraphicsBoth
 
-def evaluate_fitness(individual, scenarios):
+def evaluate_fitness(chromosome, scenarios):
     """
     Evaluates the fitness of the current individual on a set of scenarios.
 
     inputs:
-    1. individual (chromosome to create controller with)
+    1. chromosome
     2. scenarios (set of scenarios to be iterated)
 
     return: total_score (calculated based on asteroid kills and deaths of current controller in the scenarios.)
@@ -21,7 +21,7 @@ def evaluate_fitness(individual, scenarios):
 
     total_score = 0
     # SmartController class still needs to be modified to take individual as an input
-    MyController = SmartController(individual)
+    MyController = SmartController(chromosome)
     for scenario in scenarios:
         # evaluate the game
         pre = time.perf_counter()
