@@ -53,11 +53,11 @@ class SmartController(KesslerController):
         theta_delta['PL'] = fuzz.smf(theta_delta.universe,math.pi/6,math.pi/3)
         
         #Declare fuzzy sets for the ship_turn consequent; this will be returned as turn_rate.
-        ship_turn['NL'] = fuzz.trimf(ship_turn.universe, [-180,-180,-30])
-        ship_turn['NS'] = fuzz.trimf(ship_turn.universe, [-90,-30,0])
-        ship_turn['Z'] = fuzz.trimf(ship_turn.universe, [-30,0,30])
-        ship_turn['PS'] = fuzz.trimf(ship_turn.universe, [0,30,90])
-        ship_turn['PL'] = fuzz.trimf(ship_turn.universe, [30,180,180])
+        ship_turn['NL'] = fuzz.trimf(ship_turn.universe, [-180,-180,-60])
+        ship_turn['NS'] = fuzz.trimf(ship_turn.universe, [-70,-30,5])
+        ship_turn['Z'] = fuzz.trimf(ship_turn.universe, [-10,0,10])
+        ship_turn['PS'] = fuzz.trimf(ship_turn.universe, [5,30,70])
+        ship_turn['PL'] = fuzz.trimf(ship_turn.universe, [60,180,180])
         
         #Declare singleton fuzzy sets for the ship_fire consequent; -1 -> don't fire, +1 -> fire; this will be  thresholded
         #   and returned as the boolean 'fire'
@@ -66,20 +66,20 @@ class SmartController(KesslerController):
                 
         #Declare each fuzzy rule
         rule1 = ctrl.Rule(bullet_time['L'] & theta_delta['NL'], (ship_turn['NL'], ship_fire['N']))
-        rule2 = ctrl.Rule(bullet_time['L'] & theta_delta['NS'], (ship_turn['NS'], ship_fire['Y']))
-        rule3 = ctrl.Rule(bullet_time['L'] & theta_delta['Z'], (ship_turn['Z'], ship_fire['Y']))
-        rule4 = ctrl.Rule(bullet_time['L'] & theta_delta['PS'], (ship_turn['PS'], ship_fire['Y']))
+        rule2 = ctrl.Rule(bullet_time['L'] & theta_delta['NS'], (ship_turn['NS'], ship_fire['N']))
+        rule3 = ctrl.Rule(bullet_time['L'] & theta_delta['Z'], (ship_turn['Z'], ship_fire['N']))
+        rule4 = ctrl.Rule(bullet_time['L'] & theta_delta['PS'], (ship_turn['PL'], ship_fire['N']))
         rule5 = ctrl.Rule(bullet_time['L'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['N']))   
         rule6 = ctrl.Rule(bullet_time['M'] & theta_delta['NL'], (ship_turn['NL'], ship_fire['N']))
-        rule7 = ctrl.Rule(bullet_time['M'] & theta_delta['NS'], (ship_turn['NS'], ship_fire['Y']))
+        rule7 = ctrl.Rule(bullet_time['M'] & theta_delta['NS'], (ship_turn['NL'], ship_fire['Y']))
         rule8 = ctrl.Rule(bullet_time['M'] & theta_delta['Z'], (ship_turn['Z'], ship_fire['Y']))    
-        rule9 = ctrl.Rule(bullet_time['M'] & theta_delta['PS'], (ship_turn['PS'], ship_fire['Y']))
+        rule9 = ctrl.Rule(bullet_time['M'] & theta_delta['PS'], (ship_turn['PL'], ship_fire['Y']))
         rule10 = ctrl.Rule(bullet_time['M'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['N']))
-        rule11 = ctrl.Rule(bullet_time['S'] & theta_delta['NL'], (ship_turn['NL'], ship_fire['Y']))
-        rule12 = ctrl.Rule(bullet_time['S'] & theta_delta['NS'], (ship_turn['NS'], ship_fire['Y']))
+        rule11 = ctrl.Rule(bullet_time['S'] & theta_delta['NL'], (ship_turn['NL'], ship_fire['N']))
+        rule12 = ctrl.Rule(bullet_time['S'] & theta_delta['NS'], (ship_turn['NL'], ship_fire['Y']))
         rule13 = ctrl.Rule(bullet_time['S'] & theta_delta['Z'], (ship_turn['Z'], ship_fire['Y']))
-        rule14 = ctrl.Rule(bullet_time['S'] & theta_delta['PS'], (ship_turn['PS'], ship_fire['Y']))
-        rule15 = ctrl.Rule(bullet_time['S'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['Y']))
+        rule14 = ctrl.Rule(bullet_time['S'] & theta_delta['PS'], (ship_turn['PL'], ship_fire['Y']))
+        rule15 = ctrl.Rule(bullet_time['S'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['N']))
      
         #DEBUG
         #bullet_time.view()
@@ -124,11 +124,11 @@ class SmartController(KesslerController):
         # first letter: F = forwards, R = reverse
         # Second letter is F = Fast, S = Slow
         # St = stationary
-        currVelocity["RF"] = fuzz.trimf(currVelocity.universe, [-300, -200, -100])
-        currVelocity["RS"] = fuzz.trimf(currVelocity.universe, [-200, -100, 0])
-        currVelocity["St"] = fuzz.trimf(currVelocity.universe, [-100, 0, 100])
-        currVelocity["FF"] = fuzz.trimf(currVelocity.universe, [50, 250, 300])
-        currVelocity["FS"] = fuzz.trimf(currVelocity.universe, [0, 100, 200])
+        currVelocity["RF"] = fuzz.trimf(currVelocity.universe, [-300, -250, -120])
+        currVelocity["RS"] = fuzz.trimf(currVelocity.universe, [-150, -100, 0])
+        currVelocity["St"] = fuzz.trimf(currVelocity.universe, [-50, 0, 50])
+        currVelocity["FF"] = fuzz.trimf(currVelocity.universe, [120, 250, 300])
+        currVelocity["FS"] = fuzz.trimf(currVelocity.universe, [0, 100, 150])
 
         # first letter: F = forwards, R = reverse
         # Second letter is F = Fast, S = Slow
