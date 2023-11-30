@@ -182,6 +182,38 @@ class SmartController(KesslerController):
 
         return {"aster": closestAsteroid, "dist": math.sqrt((ship_pos_x - closestAsteroid["position"][0])**2 + (ship_pos_y - closestAsteroid["position"][1])**2)}
     
+    def findCollidingAsteroids(self, shipX, shipY, shipVelX, shipVelY, asteroids):
+        collisionThreshold = 5
+        collisionAsteroids = []
+
+        for asteroid in asteroids:
+            asterX, asterY = asteroid["position"]
+            asterVelX, asterVelY = asteroid["velocity"]
+
+            # Calculate time to collision 
+            timeToCollision = (asterX - shipX) / (shipVelX - asterVelX)
+
+            # Calculate future positions at the time of collision
+            shipFutureX = shipX + shipVelX * timeToCollision
+            shipFutureY = shipY + shipVelY * timeToCollision
+
+            asterFutureX = asterX + asterVelX * timeToCollision
+            asterFutureY = asterY + asterVelY * timeToCollision
+
+            # Check if the positions intersect
+            if abs(shipFutureX - asterFutureX) < collisionThreshold and abs(shipFutureY - asterFutureY) < collisionThreshold:
+                collisionAsteroids.append(asteroid)
+
+        return collisionAsteroids
+
+
+    def getAsteroidsSortedByDistance(self, shipX, shipY, asteroids):   
+        return sorted(
+            asteroids, 
+            key=lambda a: math.sqrt((shipX - a["position"][0])**2 + (shipY - a["position"][1])**2)
+        )
+
+    
     def getShootingInputs(self, ship_pos_x, ship_pos_y, ship_state, closest_asteroid):
         asteroid_ship_x = ship_pos_x - closest_asteroid["aster"]["position"][0]
         asteroid_ship_y = ship_pos_y - closest_asteroid["aster"]["position"][1]
