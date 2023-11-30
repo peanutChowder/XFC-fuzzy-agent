@@ -173,24 +173,14 @@ class SmartController(KesslerController):
         
     def getClosestAsteroid(self, ship_pos_x, ship_pos_y, game_state):
         # Find the closest asteroid (disregards asteroid velocity)      
-        closest_asteroid = None
-        
-        for a in game_state["asteroids"]:
-            #Loop through all asteroids, find minimum Eudlidean distance
-            curr_dist = math.sqrt((ship_pos_x - a["position"][0])**2 + (ship_pos_y - a["position"][1])**2)
-            if closest_asteroid is None :
-                # Does not yet exist, so initialize first asteroid as the minimum. Ugh, how to do?
-                closest_asteroid = dict(aster = a, dist = curr_dist)
-                
-            else:    
-                # closest_asteroid exists, and is thus initialized. 
-                if closest_asteroid["dist"] > curr_dist:
-                    # New minimum found
-                    closest_asteroid["aster"] = a
-                    closest_asteroid["dist"] = curr_dist
+        closestAsteroid = game_state["asteroids"][0]
 
-        # closest_asteroid is now the nearest asteroid object. 
-        return closest_asteroid
+        closestAsteroid = min(
+            game_state["asteroids"],
+            key=lambda asteroid: math.sqrt((ship_pos_x - asteroid["position"][0])**2 + (ship_pos_y - asteroid["position"][1])**2)
+        )
+
+        return {"aster": closestAsteroid, "dist": math.sqrt((ship_pos_x - closestAsteroid["position"][0])**2 + (ship_pos_y - closestAsteroid["position"][1])**2)}
     
     def getShootingInputs(self, ship_pos_x, ship_pos_y, ship_state, closest_asteroid):
         asteroid_ship_x = ship_pos_x - closest_asteroid["aster"]["position"][0]
