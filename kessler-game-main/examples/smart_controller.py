@@ -24,6 +24,7 @@ class SmartController(KesslerController):
         
     def __init__(self):
         self.eval_frames = 0 #What is this?
+        self.asteroids = None
 
         # self.targetingControl is the targeting rulebase, which is static in this controller.      
         # Declare variables
@@ -171,22 +172,22 @@ class SmartController(KesslerController):
         self.thrustControl.addrule(rule12)
         self.thrustControl.addrule(rule13)  
         
-    def getClosestAsteroid(self, ship_pos_x, ship_pos_y, game_state):
+    def getClosestAsteroid(self, ship_pos_x, ship_pos_y):
         # Find the closest asteroid (disregards asteroid velocity)      
-        closestAsteroid = game_state["asteroids"][0]
+        closestAsteroid = self.asteroids[0]
 
         closestAsteroid = min(
-            game_state["asteroids"],
+            self.asteroids,
             key=lambda asteroid: math.sqrt((ship_pos_x - asteroid["position"][0])**2 + (ship_pos_y - asteroid["position"][1])**2)
         )
 
         return {"aster": closestAsteroid, "dist": math.sqrt((ship_pos_x - closestAsteroid["position"][0])**2 + (ship_pos_y - closestAsteroid["position"][1])**2)}
     
-    def findCollidingAsteroids(self, shipX, shipY, shipVelX, shipVelY, asteroids):
+    def findCollidingAsteroids(self, shipX, shipY, shipVelX, shipVelY):
         collisionThreshold = 5
         collisionAsteroids = []
 
-        for asteroid in asteroids:
+        for asteroid in self.asteroids:
             asterX, asterY = asteroid["position"]
             asterVelX, asterVelY = asteroid["velocity"]
 
@@ -207,9 +208,9 @@ class SmartController(KesslerController):
         return collisionAsteroids
 
 
-    def getAsteroidsSortedByDistance(self, shipX, shipY, asteroids):   
+    def getAsteroidsSortedByDistance(self, shipX, shipY):   
         return sorted(
-            asteroids, 
+            self.asteroids, 
             key=lambda a: math.sqrt((shipX - a["position"][0])**2 + (shipY - a["position"][1])**2)
         )
 
@@ -308,6 +309,8 @@ class SmartController(KesslerController):
         # Side D of the triangle is given by closest_asteroid.dist. Need to get the asteroid-ship direction
         #    and the angle of the asteroid's current movement.
         # REMEMBER TRIG FUNCTIONS ARE ALL IN RADAINS!!!
+        
+        self.asteroids = game_state['asteroids']
 
         ship_pos_x = ship_state["position"][0]     # See src/kesslergame/ship.py in the KesslerGame Github
         ship_pos_y = ship_state["position"][1]    
