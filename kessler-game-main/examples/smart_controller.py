@@ -183,7 +183,7 @@ class SmartController(KesslerController):
 
         return {"aster": closestAsteroid, "dist": math.sqrt((ship_pos_x - closestAsteroid["position"][0])**2 + (ship_pos_y - closestAsteroid["position"][1])**2)}
     
-    def getCollidingAsteroids(self, shipX, shipY, shipVelX, shipVelY):
+    def getCollidingAsteroids(self, shipX, shipY, shipVelX, shipVelY, maxTime):
         collisionThreshold = 10
         collisionAsteroids = []
 
@@ -193,6 +193,10 @@ class SmartController(KesslerController):
 
             # Calculate time to collision 
             timeToCollision = (asterX - shipX) / (shipVelX - asterVelX)
+
+            # Ignore asteroids that will collide in a long time
+            if timeToCollision > maxTime:
+                continue;
 
             # Calculate future positions at the time of collision
             shipFutureX = shipX + shipVelX * timeToCollision
@@ -215,13 +219,13 @@ class SmartController(KesslerController):
         )
     
     def getMaxThreatAsteroid(self, shipX: int, shipY: int, shipVelX: int , shipVelY: int):
+        distanceThreshold = 300
 
-        collidingAsteroids = self.getCollidingAsteroids(shipX, shipY, shipVelX, shipVelY)
+        collidingAsteroids = self.getCollidingAsteroids(shipX, shipY, shipVelX, shipVelY, 500)
         sortedAsteroids = self.getAsteroidsSortedByDistance(shipX, shipY)
 
         for asteroid in sortedAsteroids:
             if asteroid in collidingAsteroids:
-                print(asteroid)
                 return {
                     "aster": asteroid, 
                     "dist": math.sqrt((shipX - asteroid["position"][0])**2 + (shipY - asteroid["position"][1])**2)
@@ -330,9 +334,9 @@ class SmartController(KesslerController):
         self.asteroids = game_state['asteroids']
 
         ship_pos_x = ship_state["position"][0]     # See src/kesslergame/ship.py in the KesslerGame Github
-        ship_pos_y = ship_state["position"][1]    
+        ship_pos_y = ship_state["position"][1]  
 
-        biggestAsteroidThreat = self.getMaxThreatAsteroid(ship_pos_x, ship_pos_y, ship_state['velocity'][0], ship_state['velocity'][1])
+        biggestAsteroidThreat = self.getClosestAsteroid(ship_pos_x, ship_pos_y)
         bullet_t, shooting_theta = self.getShootingInputs(ship_pos_x, ship_pos_y, ship_state, biggestAsteroidThreat)
 
         relativeVelocity = self.getRelativeVelocity(ship_state["velocity"][0], ship_state["velocity"][1], ship_state["heading"])
