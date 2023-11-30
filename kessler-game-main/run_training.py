@@ -1,6 +1,6 @@
-import sys
-
 import time
+import math
+import EasyGA
 
 from src.kesslergame import Scenario, KesslerGame, GraphicsType
 from examples.test_controller import TestController
@@ -42,8 +42,23 @@ def generate_chromosome():
 
     return: chromosome
     """
+    chromosome = {}
 
-    
+    # generate fuzzy sets for antecedents
+    # values hardcoded for a first testing
+    # after successful testing -> generate random values
+    chromosome['bullet_time'] = [0,0,0.05,0,0.05,0.1,0.0,0.1]
+    chromosome['theta_delta'] = [-1*math.pi/3,-1*math.pi/6,-1*math.pi/3,-1*math.pi/6,0,-1*math.pi/6,0,math.pi/6,0,math.pi/6,math.pi/3,math.pi/6,math.pi/3]
+    chromosome['nearestAsteroidDistance'] = [0, 0, 150,120, 200, 300,200, 400, 400]
+    chromosome['currVelocity'] = [-300, -200, -100,-200, -100, 0,-100, 0, 100,100, 200, 300,0, 100, 200]
+
+    # generate fuzzy sets for consequents
+    chromosome['ship_turn'] = [-180,-180,-30,-90,-30,0,-30,0,30,0,30,90,30,180,180]
+    chromosome['ship_fire'] = [-1,-1,0.0,0.0,1,1]
+    chromosome['thrust'] = [-300, -200, -100,-200, -100, 0,-100, 0, 100,100, 200, 300,0, 100, 200]
+
+    return chromosome
+
 
 
 # Define game scenario
@@ -69,23 +84,34 @@ game = KesslerGame(settings=game_settings)  # Use this to visualize the game sce
 # game = TrainerEnvironment(settings=game_settings)  # Use this for max-speed, no-graphics simulation
 
 # initialize population
-population = 
+#population = generate_chromosome()
 # set parameters of genetic algorithm
+ga = EasyGA.GA()
+ga.gene_impl = lambda: generate_chromosome()
+ga.chromosome_length = 1
+ga.population_size = 100
+ga.target_fitness_type = 'min'
+ga.generation_goal = 3
+# need to see what the syntax is when two parameters are passed
+ga.fitness_function_impl = evaluate_fitness
+ga.evolve()
+ga.print_best_chromosome()
 
-
-# evaluate the fitness on the different chromosomes on the training scenario
+# started to implement this approach based on pseudo code; might delete
+""" # evaluate the fitness on the different chromosomes on the training scenario
 # still need to think of stopping conditions
 while stopping_conditions_not_met:
     for individual in population:
         # evaluate fitness of current individual on training scenario
         evaluate_fitness(individual,my_training_scenario)
-        # modify population
+        # modify population """
 
 
-# Print out some general info about the result
+# leftover from scenario_test.py; might delete
+""" # Print out some general info about the result
 print('Scenario eval time: '+str(time.perf_counter()-pre))
 print(score.stop_reason)
 print('Asteroids hit: ' + str([team.asteroids_hit for team in score.teams]))
 print('Deaths: ' + str([team.deaths for team in score.teams]))
 print('Accuracy: ' + str([team.accuracy for team in score.teams]))
-print('Mean eval time: ' + str([team.mean_eval_time for team in score.teams]))
+print('Mean eval time: ' + str([team.mean_eval_time for team in score.teams])) """
