@@ -24,7 +24,7 @@ class SmartController(KesslerController):
         
     def __init__(self):
         self.eval_frames = 0 #What is this?
-        self.asteroids = None
+        self.asteroids = []
 
         # self.targetingControl is the targeting rulebase, which is static in this controller.      
         # Declare variables
@@ -183,8 +183,8 @@ class SmartController(KesslerController):
 
         return {"aster": closestAsteroid, "dist": math.sqrt((ship_pos_x - closestAsteroid["position"][0])**2 + (ship_pos_y - closestAsteroid["position"][1])**2)}
     
-    def findCollidingAsteroids(self, shipX, shipY, shipVelX, shipVelY):
-        collisionThreshold = 5
+    def getCollidingAsteroids(self, shipX, shipY, shipVelX, shipVelY):
+        collisionThreshold = 10
         collisionAsteroids = []
 
         for asteroid in self.asteroids:
@@ -213,7 +213,24 @@ class SmartController(KesslerController):
             self.asteroids, 
             key=lambda a: math.sqrt((shipX - a["position"][0])**2 + (shipY - a["position"][1])**2)
         )
+    
+    def getMaxThreatAsteroid(self, shipX: int, shipY: int, shipVelX: int , shipVelY: int):
 
+        collidingAsteroids = self.getCollidingAsteroids(shipX, shipY, shipVelX, shipVelY)
+        sortedAsteroids = self.getAsteroidsSortedByDistance(shipX, shipY)
+
+        for asteroid in sortedAsteroids:
+            if asteroid in collidingAsteroids:
+                print(asteroid)
+                return {
+                    "aster": asteroid, 
+                    "dist": math.sqrt((shipX - asteroid["position"][0])**2 + (shipY - asteroid["position"][1])**2)
+                    }
+            
+        return {
+            "aster": sortedAsteroids[0], 
+            "dist": math.sqrt((shipX - sortedAsteroids[0]["position"][0])**2 + (shipY - sortedAsteroids[0]["position"][1])**2)
+            }
     
     def getShootingInputs(self, ship_pos_x, ship_pos_y, ship_state, closest_asteroid):
         asteroid_ship_x = ship_pos_x - closest_asteroid["aster"]["position"][0]
@@ -281,7 +298,7 @@ class SmartController(KesslerController):
 
         return relVel
 
-    def actions(self, ship_state: Dict, game_state: Dict) -> Tuple[float, float, bool]:
+    def actions(self, ship_state: Dict, game_state: Dict):
         """
         Method processed each time step by this controller.
         """
@@ -315,10 +332,10 @@ class SmartController(KesslerController):
         ship_pos_x = ship_state["position"][0]     # See src/kesslergame/ship.py in the KesslerGame Github
         ship_pos_y = ship_state["position"][1]    
 
-        biggestAsteroidThreat = self.getClosestAsteroid(ship_pos_x, ship_pos_y, game_state)
+        biggestAsteroidThreat = self.getMaxThreatAsteroid(ship_pos_x, ship_pos_y, ship_state['velocity'][0], ship_state['velocity'][1])
         bullet_t, shooting_theta = self.getShootingInputs(ship_pos_x, ship_pos_y, ship_state, biggestAsteroidThreat)
 
-        relativeVelocity = self.getRelativeVelocity(*ship_state["velocity"], ship_state["heading"])
+        relativeVelocity = self.getRelativeVelocity(ship_state["velocity"][0], ship_state["velocity"][1], ship_state["heading"])
         
         # Pass the inputs to the rulebase and fire it
         shooting = ctrl.ControlSystemSimulation(self.targetingControl,flush_after_run=1)
@@ -361,4 +378,4 @@ class SmartController(KesslerController):
 if __name__ == "__main__":
     sc = SmartController()
 
-    sc.initMoveSystem()
+    sc.initMoveControl()
