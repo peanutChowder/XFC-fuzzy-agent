@@ -312,8 +312,8 @@ class SmartController(KesslerController):
         ship_pos_x = ship_state["position"][0]     # See src/kesslergame/ship.py in the KesslerGame Github
         ship_pos_y = ship_state["position"][1]    
 
-        closest_asteroid = self.getClosestAsteroid(ship_pos_x, ship_pos_y, game_state)
-        bullet_t, shooting_theta = self.getShootingInputs(ship_pos_x, ship_pos_y, ship_state, closest_asteroid)
+        biggestAsteroidThreat = self.getClosestAsteroid(ship_pos_x, ship_pos_y, game_state)
+        bullet_t, shooting_theta = self.getShootingInputs(ship_pos_x, ship_pos_y, ship_state, biggestAsteroidThreat)
 
         relativeVelocity = self.getRelativeVelocity(*ship_state["velocity"], ship_state["heading"])
         
@@ -324,7 +324,7 @@ class SmartController(KesslerController):
 
         # Pass inputs to movement control
         thrust = ctrl.ControlSystemSimulation(self.thrustControl, flush_after_run=1)
-        thrust.input["asteroid_distance"] = closest_asteroid["dist"]
+        thrust.input["asteroid_distance"] = biggestAsteroidThreat["dist"]
         thrust.input["curr_velocity"] = relativeVelocity
         
         shooting.compute()
