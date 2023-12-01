@@ -125,19 +125,19 @@ class SmartController(KesslerController):
         # first letter: F = forwards, R = reverse
         # Second letter is F = Fast, S = Slow
         # St = stationary
-        currVelocity["RF"] = fuzz.trimf(currVelocity.universe, [-300, -250, -120])
+        currVelocity["RF"] = fuzz.trimf(currVelocity.universe, [-300, -250, -100])
         currVelocity["RS"] = fuzz.trimf(currVelocity.universe, [-150, -70, 5])
         currVelocity["St"] = fuzz.trimf(currVelocity.universe, [-5, 0, 5])
-        currVelocity["FF"] = fuzz.trimf(currVelocity.universe, [120, 250, 300])
+        currVelocity["FF"] = fuzz.trimf(currVelocity.universe, [100, 250, 300])
         currVelocity["FS"] = fuzz.trimf(currVelocity.universe, [5, 90, 200])
 
         # first letter: F = forwards, R = reverse
         # Second letter is F = Fast, S = Slow
         # St = stationary
-        thrust["RF"] = fuzz.trimf(thrust.universe, [-300, -300, -200])
+        thrust["RF"] = fuzz.trimf(thrust.universe, [-300, -300, -150])
         thrust["RS"] = fuzz.trimf(thrust.universe, [-200, -100, 50])
         thrust["St"] = fuzz.trimf(thrust.universe, [-5, 0, 5])
-        thrust["FF"] = fuzz.trimf(thrust.universe, [200, 300, 300])
+        thrust["FF"] = fuzz.trimf(thrust.universe, [150, 300, 300])
         thrust["FS"] = fuzz.trimf(thrust.universe, [50, 100, 200])
 
         rule1 = ctrl.Rule(nearestAsteroidDistance["C"] & currVelocity['RF'], thrust["RF"])
