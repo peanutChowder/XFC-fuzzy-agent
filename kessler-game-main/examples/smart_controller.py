@@ -118,7 +118,7 @@ class SmartController(KesslerController):
 
         # C = close, M = medium, F = far
         nearestAsteroidDistance["C"] = fuzz.trimf(nearestAsteroidDistance.universe, [0, 0, 200])
-        nearestAsteroidDistance["M"] = fuzz.trimf(nearestAsteroidDistance.universe, [100, 150, 300])
+        nearestAsteroidDistance["M"] = fuzz.trimf(nearestAsteroidDistance.universe, [100, 150, 200])
         nearestAsteroidDistance["F"] = fuzz.smf(nearestAsteroidDistance.universe, 200, 350)
         # nearestAsteroidDistance["F"] = fuzz.trimf(nearestAsteroidDistance.universe, [200, 1000, 1000])
 
@@ -126,22 +126,22 @@ class SmartController(KesslerController):
         # Second letter is F = Fast, S = Slow
         # St = stationary
         currVelocity["RF"] = fuzz.trimf(currVelocity.universe, [-300, -250, -120])
-        currVelocity["RS"] = fuzz.trimf(currVelocity.universe, [-150, -100, 0])
-        currVelocity["St"] = fuzz.trimf(currVelocity.universe, [-50, 0, 50])
+        currVelocity["RS"] = fuzz.trimf(currVelocity.universe, [-150, -70, 5])
+        currVelocity["St"] = fuzz.trimf(currVelocity.universe, [-5, 0, 5])
         currVelocity["FF"] = fuzz.trimf(currVelocity.universe, [120, 250, 300])
-        currVelocity["FS"] = fuzz.trimf(currVelocity.universe, [0, 100, 150])
+        currVelocity["FS"] = fuzz.trimf(currVelocity.universe, [5, 70, 150])
 
         # first letter: F = forwards, R = reverse
         # Second letter is F = Fast, S = Slow
         # St = stationary
-        thrust["RF"] = fuzz.trimf(thrust.universe, [-300, -300, -70])
+        thrust["RF"] = fuzz.trimf(thrust.universe, [-300, -300, -200])
         thrust["RS"] = fuzz.trimf(thrust.universe, [-200, -100, 50])
-        thrust["St"] = fuzz.trimf(thrust.universe, [-30, 0, 30])
+        thrust["St"] = fuzz.trimf(thrust.universe, [-5, 0, 5])
         thrust["FF"] = fuzz.trimf(thrust.universe, [200, 300, 300])
         thrust["FS"] = fuzz.trimf(thrust.universe, [50, 100, 200])
 
-        rule1 = ctrl.Rule(nearestAsteroidDistance["C"] & currVelocity['RF'], thrust["St"])
-        rule2 = ctrl.Rule(nearestAsteroidDistance["C"] & currVelocity['RS'], thrust["RS"])
+        rule1 = ctrl.Rule(nearestAsteroidDistance["C"] & currVelocity['RF'], thrust["RF"])
+        rule2 = ctrl.Rule(nearestAsteroidDistance["C"] & currVelocity['RS'], thrust["RF"])
         rule3 = ctrl.Rule(nearestAsteroidDistance["C"] & currVelocity["St"], thrust["RF"])
         rule4 = ctrl.Rule(nearestAsteroidDistance["C"] & (currVelocity["FF"] | currVelocity["FS"]), thrust["RF"])
 
@@ -152,9 +152,9 @@ class SmartController(KesslerController):
 
         rule9 = ctrl.Rule(nearestAsteroidDistance["F"] & currVelocity["RF"], thrust["FF"])
         rule10 = ctrl.Rule(nearestAsteroidDistance["F"] & currVelocity["RS"], thrust["FF"])
-        rule11 = ctrl.Rule(nearestAsteroidDistance["F"] & currVelocity["St"], thrust["FS"])
-        rule12 = ctrl.Rule(nearestAsteroidDistance["F"] & currVelocity["FS"], thrust["FS"])
-        rule13 = ctrl.Rule(nearestAsteroidDistance["F"] & currVelocity["FF"], thrust["St"])
+        rule11 = ctrl.Rule(nearestAsteroidDistance["F"] & currVelocity["St"], thrust["FF"])
+        rule12 = ctrl.Rule(nearestAsteroidDistance["F"] & currVelocity["FS"], thrust["FF"])
+        rule13 = ctrl.Rule(nearestAsteroidDistance["F"] & currVelocity["FF"], thrust["FF"])
 
         self.thrustControl = ctrl.ControlSystem()
 
