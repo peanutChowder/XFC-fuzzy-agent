@@ -46,20 +46,24 @@ class SmartController(KesslerController):
         bullet_time['S'] = fuzz.trimf(bullet_time.universe,[0,0,0.05])
         bullet_time['M'] = fuzz.trimf(bullet_time.universe, [0,0.05,0.1])
         bullet_time['L'] = fuzz.smf(bullet_time.universe,0.0,0.1)
-        
+      
         #Declare fuzzy sets for theta_delta (degrees of turn needed to reach the calculated firing angle)
-        theta_delta['NL'] = fuzz.zmf(theta_delta.universe, -1*math.pi/3,-1*math.pi/6)
-        theta_delta['NS'] = fuzz.trimf(theta_delta.universe, [-1*math.pi/3,-1*math.pi/6,0])
-        theta_delta['Z'] = fuzz.trimf(theta_delta.universe, [-1*math.pi/6,0,math.pi/6])
-        theta_delta['PS'] = fuzz.trimf(theta_delta.universe, [0,math.pi/6,math.pi/3])
-        theta_delta['PL'] = fuzz.smf(theta_delta.universe,math.pi/6,math.pi/3)
+        theta_delta['NL'] = fuzz.zmf(theta_delta.universe, -1*math.pi, -5/9 * math.pi)
+        theta_delta['NM'] = fuzz.trimf(theta_delta.universe, [-3/4 * math.pi, -1/2*math.pi, -1/4 * math.pi])
+        theta_delta['NS'] = fuzz.trimf(theta_delta.universe, [-1/2 * math.pi, -1/4 * math.pi,0])
+        theta_delta['Z'] = fuzz.trimf(theta_delta.universe, [-1/8 * math.pi, 0, 1/8 * math.pi])
+        theta_delta['PS'] = fuzz.trimf(theta_delta.universe, [0, 1/4 * math.pi, 1/2 * math.pi])
+        theta_delta['PM'] = fuzz.trimf(theta_delta.universe, [1/4 * math.pi, 1/2 * math.pi, 3/4 * math.pi])
+        theta_delta['PL'] = fuzz.smf(theta_delta.universe, 5/9 * math.pi, math.pi)
         
         #Declare fuzzy sets for the ship_turn consequent; this will be returned as turn_rate.
-        ship_turn['NL'] = fuzz.trimf(ship_turn.universe, [-180,-180,-160])
-        ship_turn['NS'] = fuzz.trimf(ship_turn.universe, [-160,-7,5])
-        ship_turn['Z'] = fuzz.trimf(ship_turn.universe, [-10,0,10])
-        ship_turn['PS'] = fuzz.trimf(ship_turn.universe, [5,7,160])
-        ship_turn['PL'] = fuzz.trimf(ship_turn.universe, [160,180,180])
+        ship_turn['NL'] = fuzz.zmf(ship_turn.universe, -180, -100)
+        ship_turn['NM'] = fuzz.trimf(ship_turn.universe, [-135, -90, -45])
+        ship_turn['NS'] = fuzz.trimf(ship_turn.universe, [-90, -45, 0])
+        ship_turn['Z'] = fuzz.trimf(ship_turn.universe, [-23, 0, 23])
+        ship_turn['PS'] = fuzz.trimf(ship_turn.universe, [0, 45, 90])
+        ship_turn['PM'] = fuzz.trimf(ship_turn.universe, [45, 90, 135])
+        ship_turn['PL'] = fuzz.smf(ship_turn.universe, 100, 180)
         
         #Declare singleton fuzzy sets for the ship_fire consequent; -1 -> don't fire, +1 -> fire; this will be  thresholded
         #   and returned as the boolean 'fire'
@@ -67,26 +71,38 @@ class SmartController(KesslerController):
         ship_fire['Y'] = fuzz.trimf(ship_fire.universe, [0.0,1,1]) 
                 
         #Declare each fuzzy rule
-        rule1 = ctrl.Rule(bullet_time['L'] & theta_delta['NL'], (ship_turn['NL'], ship_fire['N']))
-        rule2 = ctrl.Rule(bullet_time['L'] & theta_delta['NS'], (ship_turn['NS'], ship_fire['N']))
-        rule3 = ctrl.Rule(bullet_time['L'] & theta_delta['Z'], (ship_turn['Z'], ship_fire['Y']))
-        rule4 = ctrl.Rule(bullet_time['L'] & theta_delta['PS'], (ship_turn['PS'], ship_fire['N']))
-        rule5 = ctrl.Rule(bullet_time['L'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['N']))   
-        rule6 = ctrl.Rule(bullet_time['M'] & theta_delta['NL'], (ship_turn['NL'], ship_fire['N']))
-        rule7 = ctrl.Rule(bullet_time['M'] & theta_delta['NS'], (ship_turn['NL'], ship_fire['Y']))
-        rule8 = ctrl.Rule(bullet_time['M'] & theta_delta['Z'], (ship_turn['Z'], ship_fire['Y']))    
-        rule9 = ctrl.Rule(bullet_time['M'] & theta_delta['PS'], (ship_turn['PL'], ship_fire['Y']))
-        rule10 = ctrl.Rule(bullet_time['M'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['N']))
-        rule11 = ctrl.Rule(bullet_time['S'] & theta_delta['NL'], (ship_turn['NL'], ship_fire['N']))
-        rule12 = ctrl.Rule(bullet_time['S'] & theta_delta['NS'], (ship_turn['NL'], ship_fire['Y']))
-        rule13 = ctrl.Rule(bullet_time['S'] & theta_delta['Z'], (ship_turn['Z'], ship_fire['Y']))
-        rule14 = ctrl.Rule(bullet_time['S'] & theta_delta['PS'], (ship_turn['PL'], ship_fire['Y']))
-        rule15 = ctrl.Rule(bullet_time['S'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['N']))
+        rules = [
+            ctrl.Rule(bullet_time['L'] & theta_delta['NL'], (ship_turn['NL'], ship_fire['N'])),
+            ctrl.Rule(bullet_time['L'] & theta_delta['NM'], (ship_turn['NM'], ship_fire['N'])),
+            ctrl.Rule(bullet_time['L'] & theta_delta['NS'], (ship_turn['NS'], ship_fire['N'])),
+            ctrl.Rule(bullet_time['L'] & theta_delta['Z'], (ship_turn['Z'], ship_fire['Y'])),
+            ctrl.Rule(bullet_time['L'] & theta_delta['PS'], (ship_turn['PS'], ship_fire['N'])),
+            ctrl.Rule(bullet_time['L'] & theta_delta['PM'], (ship_turn['PM'], ship_fire['Y'])),
+            ctrl.Rule(bullet_time['L'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['N'])), 
+
+            ctrl.Rule(bullet_time['M'] & theta_delta['NL'], (ship_turn['NL'], ship_fire['N'])),
+            ctrl.Rule(bullet_time['M'] & theta_delta['NM'], (ship_turn['NM'], ship_fire['N'])),
+            ctrl.Rule(bullet_time['M'] & theta_delta['NS'], (ship_turn['NS'], ship_fire['Y'])),
+            ctrl.Rule(bullet_time['M'] & theta_delta['Z'], (ship_turn['Z'], ship_fire['Y'])),    
+            ctrl.Rule(bullet_time['M'] & theta_delta['PS'], (ship_turn['PS'], ship_fire['Y'])),
+            ctrl.Rule(bullet_time['M'] & theta_delta['PM'], (ship_turn['PM'], ship_fire['N'])),
+            ctrl.Rule(bullet_time['M'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['N'])),
+
+            ctrl.Rule(bullet_time['S'] & theta_delta['NL'], (ship_turn['NL'], ship_fire['N'])),
+            ctrl.Rule(bullet_time['S'] & theta_delta['NM'], (ship_turn['NM'], ship_fire['Y'])),
+            ctrl.Rule(bullet_time['S'] & theta_delta['NS'], (ship_turn['NM'], ship_fire['Y'])),
+            ctrl.Rule(bullet_time['S'] & theta_delta['Z'], (ship_turn['Z'], ship_fire['Y'])),
+            ctrl.Rule(bullet_time['S'] & theta_delta['PS'], (ship_turn['PM'], ship_fire['Y'])),
+            ctrl.Rule(bullet_time['S'] & theta_delta['PM'], (ship_turn['PM'], ship_fire['Y'])),
+            ctrl.Rule(bullet_time['S'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['N'])),
+        ]
+        
      
         #DEBUG
         #bullet_time.view()
-        #theta_delta.view()
-        #ship_turn.view()
+        # theta_delta.view()
+        # ship_turn.view()
+        # input()
         #ship_fire.view()
      
      
@@ -96,21 +112,9 @@ class SmartController(KesslerController):
         # self.targetingControl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, rule10, rule11, rule12, rule13, rule14, rule15])
              
         self.targetingControl = ctrl.ControlSystem()
-        self.targetingControl.addrule(rule1)
-        self.targetingControl.addrule(rule2)
-        self.targetingControl.addrule(rule3)
-        self.targetingControl.addrule(rule4)
-        self.targetingControl.addrule(rule5)
-        self.targetingControl.addrule(rule6)
-        self.targetingControl.addrule(rule7)
-        self.targetingControl.addrule(rule8)
-        self.targetingControl.addrule(rule9)
-        self.targetingControl.addrule(rule10)
-        self.targetingControl.addrule(rule11)
-        self.targetingControl.addrule(rule12)
-        self.targetingControl.addrule(rule13)
-        self.targetingControl.addrule(rule14)
-        self.targetingControl.addrule(rule15)
+        for rule in rules:
+            self.targetingControl.addrule(rule)
+
 
     def initMoveControl(self):
         asteroidDistance = ctrl.Antecedent(np.arange(0, 1000, 2), "asteroid_distance")
