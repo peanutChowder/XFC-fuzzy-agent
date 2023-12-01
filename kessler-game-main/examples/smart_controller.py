@@ -31,6 +31,7 @@ class SmartController(KesslerController):
 
         self.targetingControl = None
         self.thrustControl = None
+        self.currTargetAsteroid = None
 
         self.initTargetControl()
         self.initMoveControl()
@@ -177,6 +178,20 @@ class SmartController(KesslerController):
         )
 
         return {"aster": closestAsteroid, "dist": math.sqrt((ship_pos_x - closestAsteroid["position"][0])**2 + (ship_pos_y - closestAsteroid["position"][1])**2)}
+    
+    def inDanger(self, shipX, shipY, radius):
+        for asteroid in self.asteroids:
+            asteroidX, asteroidY = asteroid["position"]
+
+            # Calculate the distance between the ship and the current asteroid
+            distance_to_ship = math.sqrt((shipX - asteroidX)**2 + (shipY - asteroidY)**2)
+
+            # Check if the asteroid is within the specified radius
+            if distance_to_ship <= radius:
+                return True  # At least one asteroid is within the danger radius
+
+        return False  # No asteroids are within the danger radius
+
     
     def getCollidingAsteroids(self, shipX, shipY, shipVelX, shipVelY, maxTime):
         collisionThreshold = 10
@@ -353,11 +368,15 @@ class SmartController(KesslerController):
         ship_pos_x = ship_state["position"][0]     # See src/kesslergame/ship.py in the KesslerGame Github
         ship_pos_y = ship_state["position"][1]  
 
-        biggestAsteroidThreat = self.getClosestAsteroid(ship_pos_x, ship_pos_y)
-        bullet_t, shooting_theta = self.getShootingInputs(ship_pos_x, ship_pos_y, ship_state, biggestAsteroidThreat)
+
+        # Only change targets if there is no current target or if other asteroids are within the danger radius
+        if not self.currTargetAsteroid or self.currTargetAsteroid["aster"] not in self.asteroids or self.inDanger(ship_pos_x, ship_pos_y, 40):
+            self.currTargetAsteroid = self.getClosestAsteroid(ship_pos_x, ship_pos_y)
+
+        bullet_t, shooting_theta = self.getShootingInputs(ship_pos_x, ship_pos_y, ship_state, self.currTargetAsteroid)
 
         relativeVelocity = self.getRelativeVelocity(ship_state["velocity"][0], ship_state["velocity"][1], ship_state["heading"])
-        relativeAsteroidVelocity = self.getRelativeAsteroidVelocity(ship_pos_x, ship_pos_y, biggestAsteroidThreat["aster"])
+        relativeAsteroidVelocity = self.getRelativeAsteroidVelocity(ship_pos_x, ship_pos_y, self.currTargetAsteroid["aster"])
         
         # Pass the inputs to the rulebase and fire it
         shooting = ctrl.ControlSystemSimulation(self.targetingControl,flush_after_run=1)
@@ -367,7 +386,7 @@ class SmartController(KesslerController):
         # Pass inputs to movement control
         thrust = ctrl.ControlSystemSimulation(self.thrustControl, flush_after_run=1)
         thrust.input["asteroid_speed"] = relativeAsteroidVelocity
-        thrust.input["asteroid_distance"] = biggestAsteroidThreat["dist"]
+        thrust.input["asteroid_distance"] = self.currTargetAsteroid["dist"]
         thrust.input["curr_velocity"] = relativeVelocity
         
         shooting.compute()
