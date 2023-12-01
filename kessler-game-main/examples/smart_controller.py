@@ -44,25 +44,25 @@ class SmartController(KesslerController):
         
         #Declare fuzzy sets for bullet_time (how long it takes for the bullet to reach the intercept point)
         bullet_time['S'] = fuzz.trimf(bullet_time.universe,[0,0,0.05])
-        bullet_time['M'] = fuzz.trimf(bullet_time.universe, [0,0.05,0.1])
-        bullet_time['L'] = fuzz.smf(bullet_time.universe,0.0,0.1)
+        bullet_time['M'] = fuzz.trimf(bullet_time.universe, [0,0.07,0.15])
+        bullet_time['L'] = fuzz.smf(bullet_time.universe,0.0,0.2)
       
         #Declare fuzzy sets for theta_delta (degrees of turn needed to reach the calculated firing angle)
         theta_delta['NL'] = fuzz.zmf(theta_delta.universe, -1*math.pi, -5/9 * math.pi)
         theta_delta['NM'] = fuzz.trimf(theta_delta.universe, [-3/4 * math.pi, -1/2*math.pi, -1/4 * math.pi])
         theta_delta['NS'] = fuzz.trimf(theta_delta.universe, [-1/2 * math.pi, -1/4 * math.pi,0])
-        theta_delta['Z'] = fuzz.trimf(theta_delta.universe, [-1/8 * math.pi, 0, 1/8 * math.pi])
+        theta_delta['Z'] = fuzz.trimf(theta_delta.universe, [-1/180 * math.pi, 0, 1/180 * math.pi])
         theta_delta['PS'] = fuzz.trimf(theta_delta.universe, [0, 1/4 * math.pi, 1/2 * math.pi])
         theta_delta['PM'] = fuzz.trimf(theta_delta.universe, [1/4 * math.pi, 1/2 * math.pi, 3/4 * math.pi])
         theta_delta['PL'] = fuzz.smf(theta_delta.universe, 5/9 * math.pi, math.pi)
         
         #Declare fuzzy sets for the ship_turn consequent; this will be returned as turn_rate.
         ship_turn['NL'] = fuzz.zmf(ship_turn.universe, -180, -100)
-        ship_turn['NM'] = fuzz.trimf(ship_turn.universe, [-135, -90, -45])
-        ship_turn['NS'] = fuzz.trimf(ship_turn.universe, [-90, -45, 0])
-        ship_turn['Z'] = fuzz.trimf(ship_turn.universe, [-23, 0, 23])
-        ship_turn['PS'] = fuzz.trimf(ship_turn.universe, [0, 45, 90])
-        ship_turn['PM'] = fuzz.trimf(ship_turn.universe, [45, 90, 135])
+        ship_turn['NM'] = fuzz.trimf(ship_turn.universe, [-135, -120, -45])
+        ship_turn['NS'] = fuzz.trimf(ship_turn.universe, [-90, -60, 0])
+        ship_turn['Z'] = fuzz.trimf(ship_turn.universe, [-1, 0, 1])
+        ship_turn['PS'] = fuzz.trimf(ship_turn.universe, [0, 60, 90])
+        ship_turn['PM'] = fuzz.trimf(ship_turn.universe, [45, 120, 135])
         ship_turn['PL'] = fuzz.smf(ship_turn.universe, 100, 180)
         
         #Declare singleton fuzzy sets for the ship_fire consequent; -1 -> don't fire, +1 -> fire; this will be  thresholded
@@ -74,17 +74,17 @@ class SmartController(KesslerController):
         rules = [
             ctrl.Rule(bullet_time['L'] & theta_delta['NL'], (ship_turn['NL'], ship_fire['N'])),
             ctrl.Rule(bullet_time['L'] & theta_delta['NM'], (ship_turn['NM'], ship_fire['N'])),
-            ctrl.Rule(bullet_time['L'] & theta_delta['NS'], (ship_turn['NS'], ship_fire['N'])),
+            ctrl.Rule(bullet_time['L'] & theta_delta['NS'], (ship_turn['NS'], ship_fire['Y'])),
             ctrl.Rule(bullet_time['L'] & theta_delta['Z'], (ship_turn['Z'], ship_fire['Y'])),
-            ctrl.Rule(bullet_time['L'] & theta_delta['PS'], (ship_turn['PS'], ship_fire['N'])),
+            ctrl.Rule(bullet_time['L'] & theta_delta['PS'], (ship_turn['PS'], ship_fire['Y'])),
             ctrl.Rule(bullet_time['L'] & theta_delta['PM'], (ship_turn['PM'], ship_fire['Y'])),
             ctrl.Rule(bullet_time['L'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['N'])), 
 
             ctrl.Rule(bullet_time['M'] & theta_delta['NL'], (ship_turn['NL'], ship_fire['N'])),
             ctrl.Rule(bullet_time['M'] & theta_delta['NM'], (ship_turn['NM'], ship_fire['N'])),
-            ctrl.Rule(bullet_time['M'] & theta_delta['NS'], (ship_turn['NS'], ship_fire['Y'])),
+            ctrl.Rule(bullet_time['M'] & theta_delta['NS'], (ship_turn['NM'], ship_fire['Y'])),
             ctrl.Rule(bullet_time['M'] & theta_delta['Z'], (ship_turn['Z'], ship_fire['Y'])),    
-            ctrl.Rule(bullet_time['M'] & theta_delta['PS'], (ship_turn['PS'], ship_fire['Y'])),
+            ctrl.Rule(bullet_time['M'] & theta_delta['PS'], (ship_turn['PM'], ship_fire['Y'])),
             ctrl.Rule(bullet_time['M'] & theta_delta['PM'], (ship_turn['PM'], ship_fire['N'])),
             ctrl.Rule(bullet_time['M'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['N'])),
 
@@ -415,7 +415,7 @@ class SmartController(KesslerController):
         #DEBUG
         # print(thrust, bullet_t, shooting_theta, turn_rate, fire, drop_mine)
         
-        return applyThrust, turn_rate, fire, drop_mine
+        return 0, turn_rate, fire, drop_mine
 
     @property
     def name(self) -> str:
