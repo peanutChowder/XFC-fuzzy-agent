@@ -112,15 +112,20 @@ class SmartController(KesslerController):
         self.targetingControl.addrule(rule15)
 
     def initMoveControl(self):
-        nearestAsteroidDistance = ctrl.Antecedent(np.arange(0, 1000, 2), "asteroid_distance")
+        asteroidDistance = ctrl.Antecedent(np.arange(0, 1000, 2), "asteroid_distance")
+        asteroidSpeed = ctrl.Antecedent(np.arange(0, 300, 1), 'asteroid_collision')
         currVelocity = ctrl.Antecedent(np.arange(-300, 300, 1), 'curr_velocity')
         thrust = ctrl.Consequent(np.arange(-300, 300, 1), 'ship_thrust')
 
         # C = close, M = medium, F = far
-        nearestAsteroidDistance["C"] = fuzz.trimf(nearestAsteroidDistance.universe, [0, 0, 200])
-        nearestAsteroidDistance["M"] = fuzz.trimf(nearestAsteroidDistance.universe, [100, 150, 200])
-        nearestAsteroidDistance["F"] = fuzz.smf(nearestAsteroidDistance.universe, 200, 350)
-        # nearestAsteroidDistance["F"] = fuzz.trimf(nearestAsteroidDistance.universe, [200, 1000, 1000])
+        asteroidDistance["C"] = fuzz.trimf(asteroidDistance.universe, [0, 0, 200])
+        asteroidDistance["M"] = fuzz.trimf(asteroidDistance.universe, [100, 150, 200])
+        asteroidDistance["F"] = fuzz.smf(asteroidDistance.universe, 200, 350)
+        
+        asteroidSpeed["N"] = fuzz.zmf(asteroidSpeed.universe, -10, 0)
+        asteroidSpeed["Z"] = fuzz.trimf(asteroidSpeed.universe, [0, 10, 40])
+        asteroidSpeed["PS"] = fuzz.trimf(asteroidSpeed.universe, [30, 60, 90])
+        asteroidSpeed["PF"] = fuzz.trimf(asteroidSpeed.universe, [60, 90, 90])
 
         # first letter: F = forwards, R = reverse
         # Second letter is F = Fast, S = Slow
@@ -140,37 +145,27 @@ class SmartController(KesslerController):
         thrust["FF"] = fuzz.trimf(thrust.universe, [150, 300, 300])
         thrust["FS"] = fuzz.trimf(thrust.universe, [50, 100, 200])
 
-        rule1 = ctrl.Rule(nearestAsteroidDistance["C"] & currVelocity['RF'], thrust["RF"])
-        rule2 = ctrl.Rule(nearestAsteroidDistance["C"] & currVelocity['RS'], thrust["RF"])
-        rule3 = ctrl.Rule(nearestAsteroidDistance["C"] & currVelocity["St"], thrust["RF"])
-        rule4 = ctrl.Rule(nearestAsteroidDistance["C"] & (currVelocity["FF"] | currVelocity["FS"]), thrust["RF"])
+        rules = [
+            ctrl.Rule(asteroidDistance["C"] & currVelocity['RF'], thrust["RF"]),
+            ctrl.Rule(asteroidDistance["C"] & currVelocity['RS'], thrust["RF"]),
+            ctrl.Rule(asteroidDistance["C"] & currVelocity["St"], thrust["RF"]),
+            ctrl.Rule(asteroidDistance["C"] & (currVelocity["FF"] | currVelocity["FS"]), thrust["RF"]),
 
-        rule5 = ctrl.Rule(nearestAsteroidDistance["M"] & currVelocity["RF"], thrust["FF"])
-        rule6 = ctrl.Rule(nearestAsteroidDistance["M"] & currVelocity["RS"], thrust["FS"])
-        rule7 = ctrl.Rule(nearestAsteroidDistance["M"] & currVelocity["St"], thrust["St"])
-        rule8 = ctrl.Rule(nearestAsteroidDistance["M"] & (currVelocity["FF"] | currVelocity["FS"]), thrust["RS"])
+            ctrl.Rule(asteroidDistance["M"] & currVelocity["RF"], thrust["FF"]),
+            ctrl.Rule(asteroidDistance["M"] & currVelocity["RS"], thrust["FS"]),
+            ctrl.Rule(asteroidDistance["M"] & currVelocity["St"], thrust["St"]),
+            ctrl.Rule(asteroidDistance["M"] & (currVelocity["FF"] | currVelocity["FS"]), thrust["RS"]),
 
-        rule9 = ctrl.Rule(nearestAsteroidDistance["F"] & currVelocity["RF"], thrust["FF"])
-        rule10 = ctrl.Rule(nearestAsteroidDistance["F"] & currVelocity["RS"], thrust["FF"])
-        rule11 = ctrl.Rule(nearestAsteroidDistance["F"] & currVelocity["St"], thrust["FF"])
-        rule12 = ctrl.Rule(nearestAsteroidDistance["F"] & currVelocity["FS"], thrust["FF"])
-        rule13 = ctrl.Rule(nearestAsteroidDistance["F"] & currVelocity["FF"], thrust["FF"])
-
+            ctrl.Rule(asteroidDistance["F"] & currVelocity["RF"], thrust["FF"]),
+            ctrl.Rule(asteroidDistance["F"] & currVelocity["RS"], thrust["FF"]),
+            ctrl.Rule(asteroidDistance["F"] & currVelocity["St"], thrust["FF"]),
+            ctrl.Rule(asteroidDistance["F"] & currVelocity["FS"], thrust["FF"]),
+            ctrl.Rule(asteroidDistance["F"] & currVelocity["FF"], thrust["FF"]),
+        ]
+        
         self.thrustControl = ctrl.ControlSystem()
-
-        self.thrustControl.addrule(rule1)
-        self.thrustControl.addrule(rule2)
-        self.thrustControl.addrule(rule3)  
-        self.thrustControl.addrule(rule4)  
-        self.thrustControl.addrule(rule5)
-        self.thrustControl.addrule(rule6)
-        self.thrustControl.addrule(rule7)
-        self.thrustControl.addrule(rule8)
-        self.thrustControl.addrule(rule9)
-        self.thrustControl.addrule(rule10)
-        self.thrustControl.addrule(rule11)
-        self.thrustControl.addrule(rule12)
-        self.thrustControl.addrule(rule13)  
+        for rule in rules:
+            self.thrustControl.addrule(rule)
         
     def getClosestAsteroid(self, ship_pos_x, ship_pos_y):
         # Find the closest asteroid (disregards asteroid velocity)      
@@ -301,6 +296,28 @@ class SmartController(KesslerController):
         relVel = (absVelX * math.cos(heading_rad)) + (absVelY * math.sin(heading_rad))
 
         return relVel
+    
+    def getRelativeAsteroidVelocity(self, shipX, shipY, asteroid):
+        # Extract asteroid position and velocity
+        asteroidX, asteroidY = asteroid["position"]
+        asteroidVelX, asteroidVelY = asteroid["velocity"]
+
+        # Calculate relative velocity components
+        relativeVelX = asteroidVelX - (shipX - asteroidX)
+        relativeVelY = asteroidVelY - (shipY - asteroidY)
+
+        # Calculate the dot product to determine the direction of the relative velocity
+        dotProduct = relativeVelX * (shipX - asteroidX) + relativeVelY * (shipY - asteroidY)
+
+        # Calculate the magnitude of the relative velocity with sign
+        if dotProduct < 0:
+            # Negative dot product indicates the asteroid is moving away from the ship
+            relativeVelocityMagnitude = -((relativeVelX ** 2 + relativeVelY ** 2) ** 0.5)
+        else:
+            # Positive dot product indicates the asteroid is moving towards the ship
+            relativeVelocityMagnitude = (relativeVelX ** 2 + relativeVelY ** 2) ** 0.5
+
+        return relativeVelocityMagnitude
 
     def actions(self, ship_state: Dict, game_state: Dict):
         """
@@ -340,6 +357,7 @@ class SmartController(KesslerController):
         bullet_t, shooting_theta = self.getShootingInputs(ship_pos_x, ship_pos_y, ship_state, biggestAsteroidThreat)
 
         relativeVelocity = self.getRelativeVelocity(ship_state["velocity"][0], ship_state["velocity"][1], ship_state["heading"])
+        relativeAsteroidVelocity = self.getRelativeAsteroidVelocity(ship_pos_x, ship_pos_y, biggestAsteroidThreat)
         
         # Pass the inputs to the rulebase and fire it
         shooting = ctrl.ControlSystemSimulation(self.targetingControl,flush_after_run=1)
