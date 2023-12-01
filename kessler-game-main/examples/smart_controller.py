@@ -74,9 +74,9 @@ class SmartController(KesslerController):
         rules = [
             ctrl.Rule(bullet_time['L'] & theta_delta['NL'], (ship_turn['NL'], ship_fire['N'])),
             ctrl.Rule(bullet_time['L'] & theta_delta['NM'], (ship_turn['NM'], ship_fire['N'])),
-            ctrl.Rule(bullet_time['L'] & theta_delta['NS'], (ship_turn['NS'], ship_fire['Y'])),
+            ctrl.Rule(bullet_time['L'] & theta_delta['NS'], (ship_turn['NM'], ship_fire['Y'])),
             ctrl.Rule(bullet_time['L'] & theta_delta['Z'], (ship_turn['Z'], ship_fire['Y'])),
-            ctrl.Rule(bullet_time['L'] & theta_delta['PS'], (ship_turn['PS'], ship_fire['Y'])),
+            ctrl.Rule(bullet_time['L'] & theta_delta['PS'], (ship_turn['PM'], ship_fire['Y'])),
             ctrl.Rule(bullet_time['L'] & theta_delta['PM'], (ship_turn['PM'], ship_fire['Y'])),
             ctrl.Rule(bullet_time['L'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['N'])), 
 
@@ -415,7 +415,7 @@ class SmartController(KesslerController):
         #DEBUG
         # print(thrust, bullet_t, shooting_theta, turn_rate, fire, drop_mine)
         
-        return 0, turn_rate, fire, drop_mine
+        return applyThrust, turn_rate, fire, drop_mine
 
     @property
     def name(self) -> str:
