@@ -55,9 +55,9 @@ class SmartController(KesslerController):
         
         #Declare fuzzy sets for the ship_turn consequent; this will be returned as turn_rate.
         ship_turn['NL'] = fuzz.trimf(ship_turn.universe, [-180,-180,-160])
-        ship_turn['NS'] = fuzz.trimf(ship_turn.universe, [-160,-30,5])
+        ship_turn['NS'] = fuzz.trimf(ship_turn.universe, [-160,-7,5])
         ship_turn['Z'] = fuzz.trimf(ship_turn.universe, [-10,0,10])
-        ship_turn['PS'] = fuzz.trimf(ship_turn.universe, [5,30,160])
+        ship_turn['PS'] = fuzz.trimf(ship_turn.universe, [5,7,160])
         ship_turn['PL'] = fuzz.trimf(ship_turn.universe, [160,180,180])
         
         #Declare singleton fuzzy sets for the ship_fire consequent; -1 -> don't fire, +1 -> fire; this will be  thresholded
@@ -68,8 +68,8 @@ class SmartController(KesslerController):
         #Declare each fuzzy rule
         rule1 = ctrl.Rule(bullet_time['L'] & theta_delta['NL'], (ship_turn['NL'], ship_fire['N']))
         rule2 = ctrl.Rule(bullet_time['L'] & theta_delta['NS'], (ship_turn['NS'], ship_fire['N']))
-        rule3 = ctrl.Rule(bullet_time['L'] & theta_delta['Z'], (ship_turn['Z'], ship_fire['N']))
-        rule4 = ctrl.Rule(bullet_time['L'] & theta_delta['PS'], (ship_turn['PL'], ship_fire['N']))
+        rule3 = ctrl.Rule(bullet_time['L'] & theta_delta['Z'], (ship_turn['Z'], ship_fire['Y']))
+        rule4 = ctrl.Rule(bullet_time['L'] & theta_delta['PS'], (ship_turn['PS'], ship_fire['N']))
         rule5 = ctrl.Rule(bullet_time['L'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['N']))   
         rule6 = ctrl.Rule(bullet_time['M'] & theta_delta['NL'], (ship_turn['NL'], ship_fire['N']))
         rule7 = ctrl.Rule(bullet_time['M'] & theta_delta['NS'], (ship_turn['NL'], ship_fire['Y']))
