@@ -54,11 +54,11 @@ class SmartController(KesslerController):
         theta_delta['PL'] = fuzz.smf(theta_delta.universe,math.pi/6,math.pi/3)
         
         #Declare fuzzy sets for the ship_turn consequent; this will be returned as turn_rate.
-        ship_turn['NL'] = fuzz.trimf(ship_turn.universe, [-180,-180,-60])
-        ship_turn['NS'] = fuzz.trimf(ship_turn.universe, [-70,-30,5])
+        ship_turn['NL'] = fuzz.trimf(ship_turn.universe, [-180,-180,-160])
+        ship_turn['NS'] = fuzz.trimf(ship_turn.universe, [-160,-30,5])
         ship_turn['Z'] = fuzz.trimf(ship_turn.universe, [-10,0,10])
-        ship_turn['PS'] = fuzz.trimf(ship_turn.universe, [5,30,70])
-        ship_turn['PL'] = fuzz.trimf(ship_turn.universe, [60,180,180])
+        ship_turn['PS'] = fuzz.trimf(ship_turn.universe, [5,30,160])
+        ship_turn['PL'] = fuzz.trimf(ship_turn.universe, [160,180,180])
         
         #Declare singleton fuzzy sets for the ship_fire consequent; -1 -> don't fire, +1 -> fire; this will be  thresholded
         #   and returned as the boolean 'fire'
