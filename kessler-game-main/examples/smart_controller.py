@@ -374,7 +374,7 @@ class SmartController(KesslerController):
 
 
         # Only change targets if there is no current target or if other asteroids are within the danger radius
-        if not self.currTargetAsteroid or self.currTargetAsteroid["aster"] not in self.asteroids or self.inDanger(ship_pos_x, ship_pos_y, 40):
+        if not self.currTargetAsteroid or self.currTargetAsteroid["aster"] not in self.asteroids or self.inDanger(ship_pos_x, ship_pos_y, 20):
             self.currTargetAsteroid = self.getClosestAsteroid(ship_pos_x, ship_pos_y)
 
         bullet_t, shooting_theta = self.getShootingInputs(ship_pos_x, ship_pos_y, ship_state, self.currTargetAsteroid)
