@@ -1,10 +1,5 @@
-# ECE 449 Intelligent Systems Engineering
-# Fall 2023
-# Dr. Scott Dick
-
-# Demonstration of a fuzzy tree-based controller for Kessler Game.
-# Please see the Kessler Game Development Guide by Dr. Scott Dick for a
-#   detailed discussion of this source code.
+# Jacob Feng
+# ECE 449
 
 from kesslergame import KesslerController # In Eclipse, the name of the library is kesslergame, not src.kesslergame
 from typing import Dict, Tuple
@@ -13,7 +8,6 @@ import skfuzzy as fuzz
 from skfuzzy import control as ctrl
 import math
 import numpy as np
-import matplotlib as plt
 
 
 
@@ -96,20 +90,7 @@ class SmartController(KesslerController):
             ctrl.Rule(bullet_time['S'] & theta_delta['PM'], (ship_turn['PM'], ship_fire['Y'])),
             ctrl.Rule(bullet_time['S'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['N'])),
         ]
-        
-     
-        #DEBUG
-        #bullet_time.view()
-        # theta_delta.view()
-        # ship_turn.view()
-        # input()
-        #ship_fire.view()
-     
-     
-        
-        # Declare the fuzzy controller, add the rules 
-        # This is an instance variable, and thus available for other methods in the same object. See notes.                         
-        # self.targetingControl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, rule10, rule11, rule12, rule13, rule14, rule15])
+
              
         self.targetingControl = ctrl.ControlSystem()
         for rule in rules:
@@ -339,33 +320,6 @@ class SmartController(KesslerController):
         return relativeVelocityMagnitude
 
     def actions(self, ship_state: Dict, game_state: Dict):
-        """
-        Method processed each time step by this controller.
-        """
-        # These were the constant actions in the basic demo, just spinning and shooting.
-        #thrust = 0 <- How do the values scale with asteroid velocity vector?
-        #turn_rate = 90 <- How do the values scale with asteroid velocity vector?
-        
-        # Answers: Asteroid position and velocity are split into their x,y components in a 2-element ?array each.
-        # So are the ship position and velocity, and bullet position and velocity. 
-        # Units appear to be meters relative to origin (where?), m/sec, m/sec^2 for thrust.
-        # Everything happens in a time increment: delta_time, which appears to be 1/30 sec; this is hardcoded in many places.
-        # So, position is updated by multiplying velocity by delta_time, and adding that to position.
-        # Ship velocity is updated by multiplying thrust by delta time.
-        # Ship position for this time increment is updated after the the thrust was applied.
-        
-
-        # My demonstration controller does not move the ship, only rotates it to shoot the nearest asteroid.
-        # Goal: demonstrate processing of game state, fuzzy controller, intercept computation 
-        # Intercept-point calculation derived from the Law of Cosines, see notes for details and citation.
-
-
-        # Calculate intercept time given ship & asteroid position, asteroid velocity vector, bullet speed (not direction).
-        # Based on Law of Cosines calculation, see notes.
-        
-        # Side D of the triangle is given by closest_asteroid.dist. Need to get the asteroid-ship direction
-        #    and the angle of the asteroid's current movement.
-        # REMEMBER TRIG FUNCTIONS ARE ALL IN RADAINS!!!
         
         self.asteroids = game_state['asteroids']
 
@@ -409,11 +363,7 @@ class SmartController(KesslerController):
         
         self.eval_frames +=1
 
-        # added due to error of missing return argument in kesslergame.py, line 125#
         drop_mine = False
-        
-        #DEBUG
-        # print(thrust, bullet_t, shooting_theta, turn_rate, fire, drop_mine)
         
         return applyThrust, turn_rate, fire, drop_mine
 
