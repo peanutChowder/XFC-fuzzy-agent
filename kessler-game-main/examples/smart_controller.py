@@ -338,6 +338,25 @@ class SmartController(KesslerController):
 
         return relativeVelocityMagnitude
 
+    def getDistanceFromNearestEdge(self, shipX, shipY, mapSize) -> tuple[str, float]:
+            # Call the edges north south east west for simplicity
+            width, height = mapSize
+
+            if abs(shipX - 0) < abs(shipX - width):
+                nearestHorizontal = ("W", abs(shipX - 0))
+            else:
+                nearestHorizontal = ("E", abs(shipX - width))
+
+            if abs(shipY - 0) < abs(shipY - height):
+                nearestVertical = ("S", abs(shipY - 0))
+            else:
+                nearestVertical = ("N", abs(shipY - height)) 
+
+            if nearestVertical[1] < nearestHorizontal[1]:
+                return nearestVertical
+            else:
+                return nearestHorizontal
+
     def actions(self, ship_state: Dict, game_state: Dict):
         """
         Method processed each time step by this controller.
