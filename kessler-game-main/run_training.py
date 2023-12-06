@@ -47,15 +47,16 @@ def generate_chromosome():
     # generate fuzzy sets for antecedents
     # values hardcoded for a first testing
     # after successful testing -> generate random values
-    chromosome['bullet_time'] = [0,0,0.05,0,0.05,0.1,0.0,0.1]
-    chromosome['theta_delta'] = [-1*math.pi/3,-1*math.pi/6,-1*math.pi/3,-1*math.pi/6,0,-1*math.pi/6,0,math.pi/6,0,math.pi/6,math.pi/3,math.pi/6,math.pi/3]
-    chromosome['nearestAsteroidDistance'] = [0, 0, 150,120, 200, 300,200, 400, 400]
-    chromosome['currVelocity'] = [-300, -200, -100,-200, -100, 0,-100, 0, 100,100, 200, 300,0, 100, 200]
+    chromosome['bullet_time'] = [0,0,0.05,0,0.07,0.15,0.0,0.2]
+    chromosome['theta_delta'] = [-1*math.pi, -5/9 * math.pi, -3/4 * math.pi, -1/2*math.pi, -1/4 * math.pi, -1/2 * math.pi, -1/4 * math.pi,0, -1/180 * math.pi, 0, 1/180 * math.pi, 0, 1/4 * math.pi, 1/2 * math.pi, 1/4 * math.pi, 1/2 * math.pi, 3/4 * math.pi, 5/9 * math.pi, math.pi]
+    chromosome['asteroidDistance'] = [0, 0, 200, 100, 150, 200, 200, 350]
+    chromosome['asteroidSpeed'] = [0, 50, 30, 70]
+    chromosome['currVelocity'] = [-300, -250, -100, -150, -70, 5, -5, 0, 5, 100, 250, 300, 5, 90, 200]
 
     # generate fuzzy sets for consequents
-    chromosome['ship_turn'] = [-180,-180,-30,-90,-30,0,-30,0,30,0,30,90,30,180,180]
+    chromosome['ship_turn'] = [-180, -100, -135, -120, -45, -90, -60, 0, -1, 0, 1, 0, 60, 90, 45, 120, 135, 100, 180]
     chromosome['ship_fire'] = [-1,-1,0.0,0.0,1,1]
-    chromosome['thrust'] = [-300, -200, -100,-200, -100, 0,-100, 0, 100,100, 200, 300,0, 100, 200]
+    chromosome['thrust'] = [-300, -300, -150, -200, -100, 50, -5, 0, 5, 150, 300, 300, 50, 100, 200]
 
     return chromosome
 
