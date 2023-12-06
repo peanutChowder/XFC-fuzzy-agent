@@ -150,6 +150,37 @@ class SmartController(KesslerController):
 
 
     def initMoveControl(self):
+        nearestAsteroidDistance = ctrl.Antecedent(np.arange(0, 250, 2), "asteroid_distance")
+        currVelocity = ctrl.Antecedent(np.arange(-300, 300, 1), 'curr_velocity')
+        thrust = ctrl.Consequent(np.arange(-300, 300, 1), 'ship_thrust')
+
+        # C = close, M = medium, F = far
+        nearestAsteroidDistance["C"] = fuzz.trimf(nearestAsteroidDistance.universe, self.chromosome['nearestAsteroidDistance'][0:3])
+        nearestAsteroidDistance["M"] = fuzz.trimf(nearestAsteroidDistance.universe, self.chromosome['nearestAsteroidDistance'][3:6])
+        nearestAsteroidDistance["F"] = fuzz.trimf(nearestAsteroidDistance.universe, self.chromosome['nearestAsteroidDistance'][6:9])
+
+        # LR = Low Risk, HR = High Risk
+        asteroidSpeed["LR"] = fuzz.zmf(asteroidSpeed.universe, 0, 50)
+        asteroidSpeed["HR"] = fuzz.smf(asteroidSpeed.universe, 30, 70)
+
+        # first letter: F = forwards, R = reverse
+        # Second letter is F = Fast, S = Slow
+        # St = stationary
+        currVelocity["RF"] = fuzz.trimf(currVelocity.universe, self.chromosome['currVelocity'][0:3])
+        currVelocity["RS"] = fuzz.trimf(currVelocity.universe, self.chromosome['currVelocity'][3:6])
+        currVelocity["St"] = fuzz.trimf(currVelocity.universe, self.chromosome['currVelocity'][6:9])
+        currVelocity["FF"] = fuzz.trimf(currVelocity.universe, self.chromosome['currVelocity'][9:12])
+        currVelocity["FS"] = fuzz.trimf(currVelocity.universe, self.chromosome['currVelocity'][12:15])
+
+        # first letter: F = forwards, R = reverse
+        # Second letter is F = Fast, S = Slow
+        # St = stationary
+        thrust["RF"] = fuzz.trimf(thrust.universe, self.chromosome['thrust'][0:3])
+        thrust["RS"] = fuzz.trimf(thrust.universe, self.chromosome['thrust'][3:6])
+        thrust["St"] = fuzz.trimf(thrust.universe, self.chromosome['thrust'][6:9])
+        thrust["FF"] = fuzz.trimf(thrust.universe, self.chromosome['thrust'][9:12])
+        thrust["FS"] = fuzz.trimf(thrust.universe, self.chromosome['thrust'][12:15])
+
         asteroidDistance = ctrl.Antecedent(np.arange(0, 1000, 2), "asteroid_distance")
         asteroidSpeed = ctrl.Antecedent(np.arange(0, 300, 1), 'asteroid_speed')
         currVelocity = ctrl.Antecedent(np.arange(-300, 300, 1), 'curr_velocity')
