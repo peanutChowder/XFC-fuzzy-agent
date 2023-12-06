@@ -22,7 +22,7 @@ class SmartController(KesslerController):
     
     
         
-    def __init__(self):
+    def __init__(self, chromosome):
         self.eval_frames = 0 #What is this?
         self.asteroids = []
 
@@ -32,6 +32,8 @@ class SmartController(KesslerController):
         self.targetingControl = None
         self.thrustControl = None
         self.currTargetAsteroid = None
+
+        self.chromosome = chromosome
 
         self.initTargetControl()
         self.initMoveControl()
