@@ -116,7 +116,6 @@ best_chromosome = ga.database.query_all(
     """
 )
 
-
 # create controller with best chromosome
 best_chromosome = best_chromosome.replace("'", "\"")
 best_chromosome = json.loads(best_chromosome)
