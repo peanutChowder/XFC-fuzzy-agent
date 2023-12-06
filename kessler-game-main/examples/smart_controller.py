@@ -362,10 +362,8 @@ class SmartController(KesslerController):
         applyThrust = thrust.output["ship_thrust"]
         
         self.eval_frames +=1
-
-        drop_mine = False
         
-        return applyThrust, turn_rate, fire, drop_mine
+        return applyThrust, turn_rate, fire
 
     @property
     def name(self) -> str:
