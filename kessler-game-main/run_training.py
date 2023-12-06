@@ -2,13 +2,13 @@ import time
 import math
 import EasyGA
 
-from src.kesslergame import Scenario, KesslerGame, GraphicsType
+from kesslergame import Scenario, KesslerGame, GraphicsType, TrainerEnvironment
 from examples.test_controller import TestController
 from examples.scott_dick_controller import ScottDickController
 from examples.smart_controller import SmartController
 from examples.graphics_both import GraphicsBoth
 
-def evaluate_fitness(chromosome, scenarios):
+def evaluate_fitness(chromosome):
     """
     Evaluates the fitness of the current individual on a set of scenarios.
 
@@ -22,10 +22,11 @@ def evaluate_fitness(chromosome, scenarios):
     total_score = 0
     # SmartController class still needs to be modified to take individual as an input
     MyController = SmartController(chromosome)
+
     for scenario in scenarios:
         # evaluate the game
         pre = time.perf_counter()
-        score,perf_data = game.run(scenario=scenario, controllers=[MyController(), ScottDickController()])
+        score,perf_data = game.run(scenario=scenario, controllers=[MyController, ScottDickController()])
         # calculate the current fitness and add it to the total score
         # my controller is set as first controller when running the game -> access via index 0
         asteroid_kills = score.teams[0].asteroids_hit
@@ -81,8 +82,15 @@ game_settings = {'perf_tracker': True,
                  'graphics_obj': None,
                  'frequency': 30}
 
-game = KesslerGame(settings=game_settings)  # Use this to visualize the game scenario
-# game = TrainerEnvironment(settings=game_settings)  # Use this for max-speed, no-graphics simulation
+# set game as global variable for fitness function
+global game
+#game = KesslerGame(settings=game_settings)  # Use this to visualize the game scenario
+game = TrainerEnvironment(settings=game_settings)  # Use this for max-speed, no-graphics simulation
+
+# set scenario as global variable for fitness function
+global scenarios
+scenarios = [my_training_scenario]
+
 
 # initialize population
 #population = generate_chromosome()
@@ -90,29 +98,14 @@ game = KesslerGame(settings=game_settings)  # Use this to visualize the game sce
 ga = EasyGA.GA()
 ga.gene_impl = lambda: generate_chromosome()
 ga.chromosome_length = 1
-ga.population_size = 100
+ga.population_size = 5
 ga.target_fitness_type = 'min'
-ga.generation_goal = 3
+ga.generation_goal = 1
 # need to see what the syntax is when two parameters are passed
 ga.fitness_function_impl = evaluate_fitness
 ga.evolve()
 ga.print_best_chromosome()
 
-# started to implement this approach based on pseudo code; might delete
-""" # evaluate the fitness on the different chromosomes on the training scenario
-# still need to think of stopping conditions
-while stopping_conditions_not_met:
-    for individual in population:
-        # evaluate fitness of current individual on training scenario
-        evaluate_fitness(individual,my_training_scenario)
-        # modify population """
+# get best chromosome
 
-
-# leftover from scenario_test.py; might delete
-""" # Print out some general info about the result
-print('Scenario eval time: '+str(time.perf_counter()-pre))
-print(score.stop_reason)
-print('Asteroids hit: ' + str([team.asteroids_hit for team in score.teams]))
-print('Deaths: ' + str([team.deaths for team in score.teams]))
-print('Accuracy: ' + str([team.accuracy for team in score.teams]))
-print('Mean eval time: ' + str([team.mean_eval_time for team in score.teams])) """
+# create controller with best chromosome
