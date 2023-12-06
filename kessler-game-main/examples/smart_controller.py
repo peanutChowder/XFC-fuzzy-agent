@@ -43,6 +43,39 @@ class SmartController(KesslerController):
         ship_fire = ctrl.Consequent(np.arange(-1,1,0.1), 'ship_fire')
         
         #Declare fuzzy sets for bullet_time (how long it takes for the bullet to reach the intercept point)
+        bullet_time['S'] = fuzz.trimf(bullet_time.universe, self.chromosome['bullet_time'][0:3])
+        bullet_time['M'] = fuzz.trimf(bullet_time.universe, self.chromosome['bullet_time'][3:6])
+        bullet_time['L'] = fuzz.smf(bullet_time.universe,self.chromosome['bullet_time'][6],self.chromosome['bullet_time'][7])
+        
+        #Declare fuzzy sets for theta_delta (degrees of turn needed to reach the calculated firing angle)
+        theta_delta['NL'] = fuzz.zmf(theta_delta.universe, self.chromosome['theta_delta'][0],self.chromosome['theta_delta'][1])
+        theta_delta['NM'] = fuzz.zmf(theta_delta.universe, self.chromosome['theta_delta'][0],self.chromosome['theta_delta'][1])
+        theta_delta['NS'] = fuzz.trimf(theta_delta.universe, self.chromosome['theta_delta'][2:5])
+        theta_delta['Z'] = fuzz.trimf(theta_delta.universe, self.chromosome['theta_delta'][5:8])
+        theta_delta['PS'] = fuzz.trimf(theta_delta.universe, self.chromosome['theta_delta'][8:11])
+        theta_delta['PM'] = fuzz.trimf(theta_delta.universe, self.chromosome['theta_delta'][8:11])
+        theta_delta['PL'] = fuzz.smf(theta_delta.universe,self.chromosome['theta_delta'][11],self.chromosome['theta_delta'][12])
+        
+        #Declare fuzzy sets for the ship_turn consequent; this will be returned as turn_rate.
+        ship_turn['NL'] = fuzz.trimf(ship_turn.universe, self.chromosome['ship_turn'][0:3])
+        ship_turn['NM'] = fuzz.trimf(ship_turn.universe, self.chromosome['ship_turn'][0:3])
+        ship_turn['NS'] = fuzz.trimf(ship_turn.universe, self.chromosome['ship_turn'][3:6])
+        ship_turn['Z'] = fuzz.trimf(ship_turn.universe, self.chromosome['ship_turn'][6:9])
+        ship_turn['PS'] = fuzz.trimf(ship_turn.universe, self.chromosome['ship_turn'][9:12])
+        ship_turn['PM'] = fuzz.trimf(ship_turn.universe, self.chromosome['ship_turn'][9:12])
+        ship_turn['PL'] = fuzz.trimf(ship_turn.universe, self.chromosome['ship_turn'][12:15])
+        
+        #Declare singleton fuzzy sets for the ship_fire consequent; -1 -> don't fire, +1 -> fire; this will be  thresholded
+        #   and returned as the boolean 'fire'
+        ship_fire['N'] = fuzz.trimf(ship_fire.universe, self.chromosome['ship_fire'][0:3])
+        ship_fire['Y'] = fuzz.trimf(ship_fire.universe, self.chromosome['ship_fire'][3:6])
+
+        bullet_time = ctrl.Antecedent(np.arange(0,1.0,0.002), 'bullet_time')
+        theta_delta = ctrl.Antecedent(np.arange(-1*math.pi,math.pi,0.1), 'theta_delta') # Radians due to Python
+        ship_turn = ctrl.Consequent(np.arange(-180,180,1), 'ship_turn') # Degrees due to Kessler
+        ship_fire = ctrl.Consequent(np.arange(-1,1,0.1), 'ship_fire')
+        
+        #Declare fuzzy sets for bullet_time (how long it takes for the bullet to reach the intercept point)
         bullet_time['S'] = fuzz.trimf(bullet_time.universe,[0,0,0.05])
         bullet_time['M'] = fuzz.trimf(bullet_time.universe, [0,0.07,0.15])
         bullet_time['L'] = fuzz.smf(bullet_time.universe,0.0,0.2)
