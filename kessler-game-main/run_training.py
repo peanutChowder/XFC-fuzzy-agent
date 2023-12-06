@@ -99,7 +99,7 @@ ga = EasyGA.GA()
 ga.gene_impl = lambda: generate_chromosome()
 ga.chromosome_length = 1
 ga.population_size = 5
-ga.target_fitness_type = 'min'
+ga.target_fitness_type = 'max'
 ga.generation_goal = 1
 # need to see what the syntax is when two parameters are passed
 ga.fitness_function_impl = evaluate_fitness
