@@ -1,6 +1,7 @@
 import time
 import math
 import EasyGA
+import json
 
 from kesslergame import Scenario, KesslerGame, GraphicsType, TrainerEnvironment
 from examples.test_controller import TestController
@@ -14,7 +15,6 @@ def evaluate_fitness(chromosome):
 
     inputs:
     1. chromosome
-    2. scenarios (set of scenarios to be iterated)
 
     return: total_score (calculated based on asteroid kills and deaths of current controller in the scenarios.)
     """
@@ -107,5 +107,22 @@ ga.evolve()
 ga.print_best_chromosome()
 
 # get best chromosome
+best_fitness = ga.database.get_highest_chromosome()
+best_chromosome = ga.database.query_all(
+    f"""
+    SELECT chromosome
+    FROM data
+    WHERE fitness = {best_fitness}
+    """
+)
+
 
 # create controller with best chromosome
+best_chromosome = best_chromosome.replace("'", "\"")
+best_chromosome = json.loads(best_chromosome)
+BestController = SmartController(best_chromosome[0])
+
+# run game with the best controller
+final_game = KesslerGame(settings=game_settings)  # Use this to visualize the game scenario
+pre = time.perf_counter()
+score,perf_data = final_game.run(scenario=my_training_scenario, controllers=[BestController, ScottDickController()])
