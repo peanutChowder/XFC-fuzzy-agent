@@ -21,7 +21,7 @@ def evaluate_fitness(chromosome):
 
     total_score = 0
     # SmartController class still needs to be modified to take individual as an input
-    MyController = SmartController(chromosome)
+    MyController = SmartController(chromosome,'train')
 
     for scenario in scenarios:
         # evaluate the game
@@ -119,7 +119,7 @@ best_chromosome = ga.database.query_all(
 # create controller with best chromosome
 best_chromosome = best_chromosome.replace("'", "\"")
 best_chromosome = json.loads(best_chromosome)
-BestController = SmartController(best_chromosome[0])
+BestController = SmartController(best_chromosome[0],'test')
 
 # run game with the best controller
 final_game = KesslerGame(settings=game_settings)  # Use this to visualize the game scenario
