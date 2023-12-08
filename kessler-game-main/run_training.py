@@ -65,9 +65,7 @@ def generate_chromosome():
     return chromosome
 
 def main():
-    # set game as global variable for fitness function
     global game
-    # set scenario as global variable for fitness function
     global scenarios
 
     # Define game scenario
@@ -91,11 +89,9 @@ def main():
 
     scenarios = [my_training_scenario]
 
-    #game = KesslerGame(settings=game_settings)  # Use this to visualize the game scenario
     game = TrainerEnvironment(settings=game_settings)  # Use this for max-speed, no-graphics simulation
 
-    # initialize population
-    #population = generate_chromosome()
+    # init and
     # set parameters of genetic algorithm
     ga = EasyGA.GA()
     ga.gene_impl = lambda: generate_chromosome()
@@ -103,7 +99,6 @@ def main():
     ga.population_size = 2
     ga.target_fitness_type = 'max'
     ga.generation_goal = 2
-    # need to see what the syntax is when two parameters are passed
     ga.fitness_function_impl = evaluate_fitness
     ga.evolve()
     ga.print_best_chromosome()
