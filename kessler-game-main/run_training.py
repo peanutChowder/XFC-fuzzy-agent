@@ -12,7 +12,7 @@ from examples.graphics_both import GraphicsBoth
 
 game = None
 
-def evaluate_fitness(chromosome):
+def evaluate_fitness(chromosome, mode="train"):
     """
     Evaluates the fitness of the current individual on a set of scenarios.
 
@@ -23,8 +23,7 @@ def evaluate_fitness(chromosome):
     """
 
     total_score = 0
-    # SmartController class still needs to be modified to take individual as an input
-    MyController = SmartController(chromosome,'train')
+    MyController = SmartController(chromosome,mode)
 
     for scenario in scenarios:
         # evaluate the game
@@ -64,6 +63,37 @@ def generate_chromosome():
 
     return chromosome
 
+def generate_static_chromosome():
+    """
+    Return a hardcoded chromosome to compare the GA-optimized fuzzy system with
+    """
+    chromosome = {}
+
+    # generate fuzzy sets for antecedents
+    # values hardcoded for a first testing
+    # after successful testing -> generate random values
+    chromosome['bullet_time'] = [0,0,0.05,0,0.07,0.15,0.0,0.2]
+    chromosome['theta_delta'] = [-1*math.pi, -5/9 * math.pi, -3/4 * math.pi, -1/2*math.pi, -1/4 * math.pi, -1/2 * math.pi, -1/4 * math.pi,0, -1/180 * math.pi, 0, 1/180 * math.pi, 0, 1/4 * math.pi, 1/2 * math.pi, 1/4 * math.pi, 1/2 * math.pi, 3/4 * math.pi, 5/9 * math.pi, math.pi]
+    chromosome['asteroidDistance'] = [0, 0, 200, 100, 150, 200, 200, 350]
+    chromosome['asteroidSpeed'] = [0, 50, 30, 70]
+    chromosome['currVelocity'] = [-300, -250, -100, -150, -70, 5, -5, 0, 5, 100, 250, 300, 5, 90, 200]
+
+    # generate fuzzy sets for consequents
+    chromosome['ship_turn'] = [-180, -100, -135, -120, -45, -90, -60, 0, -1, 0, 1, 0, 60, 90, 45, 120, 135, 100, 180]
+    chromosome['ship_fire'] = [-1,-1,0.0,0.0,1,1]
+    chromosome['thrust'] = [-300, -300, -150, -200, -100, 50, -5, 0, 5, 150, 300, 300, 50, 100, 200]
+
+    return chromosome
+
+def displayCompareWithStatic(best_fitness):
+    chromosome = generate_static_chromosome()
+
+    staticFitness =  evaluate_fitness(chromosome, "test")
+    print("==================== Summary ================================")
+    print(f"Fitness of an unoptimized fuzzy controller: {staticFitness}")
+    print(f"Fitness of a GA-optimized fuzzy controller: {best_fitness} ")
+    print("=============================================================")
+
 def main():
     global game
     global scenarios
@@ -86,7 +116,6 @@ def main():
                     'realtime_multiplier': 1,
                     'graphics_obj': None,
                     'frequency': 30}
-
     scenarios = [my_training_scenario]
 
     game = TrainerEnvironment(settings=game_settings)  # Use this for max-speed, no-graphics simulation
@@ -96,22 +125,29 @@ def main():
     ga = EasyGA.GA()
     ga.gene_impl = lambda: generate_chromosome()
     ga.chromosome_length = 1
-    ga.population_size = 2
+    ga.population_size = 1
     ga.target_fitness_type = 'max'
-    ga.generation_goal = 2
+    ga.generation_goal = 1
     ga.fitness_function_impl = evaluate_fitness
     ga.evolve()
     ga.print_best_chromosome()
 
     # get best chromosome
     best_fitness = ga.database.get_highest_chromosome()
+    best_fitness = best_fitness if type(best_fitness) == float else max(best_fitness) # Sometimes best fitness is a list, other times a float
+
     best_chromosome = ga.database.query_all(
         f"""
         SELECT chromosome
         FROM data
-        WHERE fitness = {max(best_fitness)}
+        WHERE fitness = {best_fitness}
         """
     )
+
+    displayCompareWithStatic(best_fitness)
+
+    # Sometimes SQLite returns a list, sometimes not. This is to handle that
+    best_chromosome = best_chromosome[0] if type(best_chromosome) == list else best_chromosome
 
     # create controller with best chromosome
     best_chromosome = best_chromosome.replace("'", "\"")
