@@ -221,7 +221,7 @@ class ScottDickController(KesslerController):
         drop_mine = False
         
         #DEBUG
-        print(thrust, bullet_t, shooting_theta, turn_rate, fire, drop_mine)
+        # print(thrust, bullet_t, shooting_theta, turn_rate, fire, drop_mine)
         
         return thrust, turn_rate, fire, drop_mine
 

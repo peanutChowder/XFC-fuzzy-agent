@@ -1,4 +1,3 @@
-# Jacob Feng
 # ECE 449
 
 from kesslergame import KesslerController # In Eclipse, the name of the library is kesslergame, not src.kesslergame
@@ -12,11 +11,8 @@ import numpy as np
 
 
 
-class SmartController(KesslerController):
-    
-    
-        
-    def __init__(self, chromosome, mode):
+class SmartController(KesslerController):    
+    def __init__(self):
         self.eval_frames = 0 #What is this?
         self.asteroids = []
 
@@ -27,8 +23,15 @@ class SmartController(KesslerController):
         self.thrustControl = None
         self.currTargetAsteroid = None
 
-        self.chromosome = chromosome
-        self.mode = mode
+        self.chromosome = {
+            'bullet_time': [0, 0, 0.05, 0, 0.13953120977457778, 0.15, 0.0, 0.2], 
+            'theta_delta': [-3.141592653589793, -1.7453292519943295, -2.356194490192345, -1.8686027441513713, -0.7853981633974483, -1.5707963267948966, -0.8201080747901244, 0, -0.017453292519943295, 0.009584383698668802, 0.017453292519943295, 0, 1.1632429314449222, 1.5707963267948966, 0.7853981633974483, 1.4485319099297818, 2.356194490192345, 1.7453292519943295, 3.141592653589793], 
+            'asteroidDistance': [0, 0, 200, 100, 101.48970099849343, 200, 200, 350], 
+            'asteroidSpeed': [0, 48.98745166212213, 30, 76.07035417757248], 
+            'currVelocity': [-300, -250, -100, -150, -51.95664501955507, 5, -5, 3.4155333146085702, 5, 100, 134.93968610166894, 300, 5, 90, 200], 
+            'ship_turn': [-180, -100, -135, -115.32681775884114, -45, -90, -23.498219866675626, 0, -1, 0.15754502952669047, 1, 0, 70.76968505711935, 90, 45, 63.62856788599581, 135, 100, 180], 
+            'ship_fire': [-1, -1, 0.0, 0.0, 1, 1], 'thrust': [-300, -300, -150, -200, -133.64670211907716, 50, -5, 0.22446943706403566, 5, 150, 300, 300, 50, 95.9783670537486, 200]
+        }
 
         self.initTargetControl()
         self.initMoveControl()
@@ -39,64 +42,34 @@ class SmartController(KesslerController):
         ship_turn = ctrl.Consequent(np.arange(-180,180,1), 'ship_turn') # Degrees due to Kessler
         ship_fire = ctrl.Consequent(np.arange(-1,1,0.1), 'ship_fire')
         
-        if self.mode == 'test':
-            #Declare fuzzy sets for bullet_time (how long it takes for the bullet to reach the intercept point)
-            bullet_time['S'] = fuzz.trimf(bullet_time.universe, self.chromosome['bullet_time'][0:3])
-            bullet_time['M'] = fuzz.trimf(bullet_time.universe, self.chromosome['bullet_time'][3:6])
-            bullet_time['L'] = fuzz.smf(bullet_time.universe,self.chromosome['bullet_time'][6], self.chromosome['bullet_time'][7])
-            
-            #Declare fuzzy sets for theta_delta (degrees of turn needed to reach the calculated firing angle)
-            theta_delta['NL'] = fuzz.zmf(theta_delta.universe, self.chromosome['theta_delta'][0], self.chromosome['theta_delta'][1])
-            theta_delta['NM'] = fuzz.trimf(theta_delta.universe, self.chromosome['theta_delta'][2:5])
-            theta_delta['NS'] = fuzz.trimf(theta_delta.universe, self.chromosome['theta_delta'][5:8])
-            theta_delta['Z'] = fuzz.trimf(theta_delta.universe, self.chromosome['theta_delta'][8:11])
-            theta_delta['PS'] = fuzz.trimf(theta_delta.universe, self.chromosome['theta_delta'][11:14])
-            theta_delta['PM'] = fuzz.trimf(theta_delta.universe, self.chromosome['theta_delta'][14:17])
-            theta_delta['PL'] = fuzz.smf(theta_delta.universe,self.chromosome['theta_delta'][17], self.chromosome['theta_delta'][18])
-            
-            #Declare fuzzy sets for the ship_turn consequent; this will be returned as turn_rate.
-            ship_turn['NL'] = fuzz.zmf(ship_turn.universe, self.chromosome['ship_turn'][0], self.chromosome['ship_turn'][1])
-            ship_turn['NM'] = fuzz.trimf(ship_turn.universe, self.chromosome['ship_turn'][2:5])
-            ship_turn['NS'] = fuzz.trimf(ship_turn.universe, self.chromosome['ship_turn'][5:8])
-            ship_turn['Z'] = fuzz.trimf(ship_turn.universe, self.chromosome['ship_turn'][8:11])
-            ship_turn['PS'] = fuzz.trimf(ship_turn.universe, self.chromosome['ship_turn'][11:14])
-            ship_turn['PM'] = fuzz.trimf(ship_turn.universe, self.chromosome['ship_turn'][14:17])
-            ship_turn['PL'] = fuzz.smf(ship_turn.universe, self.chromosome['ship_turn'][17], self.chromosome['ship_turn'][18])
-            
-            #Declare singleton fuzzy sets for the ship_fire consequent; -1 -> don't fire, +1 -> fire; this will be  thresholded
-            #   and returned as the boolean 'fire'
-            ship_fire['N'] = fuzz.trimf(ship_fire.universe, self.chromosome['ship_fire'][0:3])
-            ship_fire['Y'] = fuzz.trimf(ship_fire.universe, self.chromosome['ship_fire'][3:6])
+        #Declare fuzzy sets for bullet_time (how long it takes for the bullet to reach the intercept point)
+        bullet_time['S'] = fuzz.trimf(bullet_time.universe, self.chromosome['bullet_time'][0:3])
+        bullet_time['M'] = fuzz.trimf(bullet_time.universe, self.chromosome['bullet_time'][3:6])
+        bullet_time['L'] = fuzz.smf(bullet_time.universe,self.chromosome['bullet_time'][6], self.chromosome['bullet_time'][7])
         
-        if self.mode == 'train':
-            #Declare fuzzy sets for bullet_time (how long it takes for the bullet to reach the intercept point)
-            bullet_time['S'] = fuzz.trimf(bullet_time.universe, self.chromosome[0].value['bullet_time'][0:3])
-            bullet_time['M'] = fuzz.trimf(bullet_time.universe, self.chromosome[0].value['bullet_time'][3:6])
-            bullet_time['L'] = fuzz.smf(bullet_time.universe,self.chromosome[0].value['bullet_time'][6], self.chromosome[0].value['bullet_time'][7])
-            
-            #Declare fuzzy sets for theta_delta (degrees of turn needed to reach the calculated firing angle)
-            theta_delta['NL'] = fuzz.zmf(theta_delta.universe, self.chromosome[0].value['theta_delta'][0], self.chromosome[0].value['theta_delta'][1])
-            theta_delta['NM'] = fuzz.trimf(theta_delta.universe, self.chromosome[0].value['theta_delta'][2:5])
-            theta_delta['NS'] = fuzz.trimf(theta_delta.universe, self.chromosome[0].value['theta_delta'][5:8])
-            theta_delta['Z'] = fuzz.trimf(theta_delta.universe, self.chromosome[0].value['theta_delta'][8:11])
-            theta_delta['PS'] = fuzz.trimf(theta_delta.universe, self.chromosome[0].value['theta_delta'][11:14])
-            theta_delta['PM'] = fuzz.trimf(theta_delta.universe, self.chromosome[0].value['theta_delta'][14:17])
-            theta_delta['PL'] = fuzz.smf(theta_delta.universe,self.chromosome[0].value['theta_delta'][17], self.chromosome[0].value['theta_delta'][18])
-            
-            #Declare fuzzy sets for the ship_turn consequent; this will be returned as turn_rate.
-            ship_turn['NL'] = fuzz.zmf(ship_turn.universe, self.chromosome[0].value['ship_turn'][0], self.chromosome[0].value['ship_turn'][1])
-            ship_turn['NM'] = fuzz.trimf(ship_turn.universe, self.chromosome[0].value['ship_turn'][2:5])
-            ship_turn['NS'] = fuzz.trimf(ship_turn.universe, self.chromosome[0].value['ship_turn'][5:8])
-            ship_turn['Z'] = fuzz.trimf(ship_turn.universe, self.chromosome[0].value['ship_turn'][8:11])
-            ship_turn['PS'] = fuzz.trimf(ship_turn.universe, self.chromosome[0].value['ship_turn'][11:14])
-            ship_turn['PM'] = fuzz.trimf(ship_turn.universe, self.chromosome[0].value['ship_turn'][14:17])
-            ship_turn['PL'] = fuzz.smf(ship_turn.universe, self.chromosome[0].value['ship_turn'][17], self.chromosome[0].value['ship_turn'][18])
-            
-            #Declare singleton fuzzy sets for the ship_fire consequent; -1 -> don't fire, +1 -> fire; this will be  thresholded
-            #   and returned as the boolean 'fire'
-            ship_fire['N'] = fuzz.trimf(ship_fire.universe, self.chromosome[0].value['ship_fire'][0:3])
-            ship_fire['Y'] = fuzz.trimf(ship_fire.universe, self.chromosome[0].value['ship_fire'][3:6])
+        #Declare fuzzy sets for theta_delta (degrees of turn needed to reach the calculated firing angle)
+        theta_delta['NL'] = fuzz.zmf(theta_delta.universe, self.chromosome['theta_delta'][0], self.chromosome['theta_delta'][1])
+        theta_delta['NM'] = fuzz.trimf(theta_delta.universe, self.chromosome['theta_delta'][2:5])
+        theta_delta['NS'] = fuzz.trimf(theta_delta.universe, self.chromosome['theta_delta'][5:8])
+        theta_delta['Z'] = fuzz.trimf(theta_delta.universe, self.chromosome['theta_delta'][8:11])
+        theta_delta['PS'] = fuzz.trimf(theta_delta.universe, self.chromosome['theta_delta'][11:14])
+        theta_delta['PM'] = fuzz.trimf(theta_delta.universe, self.chromosome['theta_delta'][14:17])
+        theta_delta['PL'] = fuzz.smf(theta_delta.universe,self.chromosome['theta_delta'][17], self.chromosome['theta_delta'][18])
         
+        #Declare fuzzy sets for the ship_turn consequent; this will be returned as turn_rate.
+        ship_turn['NL'] = fuzz.zmf(ship_turn.universe, self.chromosome['ship_turn'][0], self.chromosome['ship_turn'][1])
+        ship_turn['NM'] = fuzz.trimf(ship_turn.universe, self.chromosome['ship_turn'][2:5])
+        ship_turn['NS'] = fuzz.trimf(ship_turn.universe, self.chromosome['ship_turn'][5:8])
+        ship_turn['Z'] = fuzz.trimf(ship_turn.universe, self.chromosome['ship_turn'][8:11])
+        ship_turn['PS'] = fuzz.trimf(ship_turn.universe, self.chromosome['ship_turn'][11:14])
+        ship_turn['PM'] = fuzz.trimf(ship_turn.universe, self.chromosome['ship_turn'][14:17])
+        ship_turn['PL'] = fuzz.smf(ship_turn.universe, self.chromosome['ship_turn'][17], self.chromosome['ship_turn'][18])
+        
+        #Declare singleton fuzzy sets for the ship_fire consequent; -1 -> don't fire, +1 -> fire; this will be  thresholded
+        #   and returned as the boolean 'fire'
+        ship_fire['N'] = fuzz.trimf(ship_fire.universe, self.chromosome['ship_fire'][0:3])
+        ship_fire['Y'] = fuzz.trimf(ship_fire.universe, self.chromosome['ship_fire'][3:6])
+    
                 
         #Declare each fuzzy rule
         rules = [
@@ -137,61 +110,32 @@ class SmartController(KesslerController):
         currVelocity = ctrl.Antecedent(np.arange(-300, 300, 1), 'curr_velocity')
         thrust = ctrl.Consequent(np.arange(-300, 300, 1), 'ship_thrust')
 
-        if self.mode == 'test':
-            # C = close, M = medium, F = far
-            asteroidDistance["C"] = fuzz.trimf(asteroidDistance.universe, self.chromosome['asteroidDistance'][0:3])
-            asteroidDistance["M"] = fuzz.trimf(asteroidDistance.universe, self.chromosome['asteroidDistance'][3:6])
-            asteroidDistance["F"] = fuzz.smf(asteroidDistance.universe, self.chromosome['asteroidDistance'][6], self.chromosome['asteroidDistance'][7])
+        # C = close, M = medium, F = far
+        asteroidDistance["C"] = fuzz.trimf(asteroidDistance.universe, self.chromosome['asteroidDistance'][0:3])
+        asteroidDistance["M"] = fuzz.trimf(asteroidDistance.universe, self.chromosome['asteroidDistance'][3:6])
+        asteroidDistance["F"] = fuzz.smf(asteroidDistance.universe, self.chromosome['asteroidDistance'][6], self.chromosome['asteroidDistance'][7])
 
-            # LR = Low Risk, HR = High Risk
-            asteroidSpeed["LR"] = fuzz.zmf(asteroidSpeed.universe, self.chromosome['asteroidSpeed'][0], self.chromosome['asteroidSpeed'][1])
-            asteroidSpeed["HR"] = fuzz.smf(asteroidSpeed.universe, self.chromosome['asteroidSpeed'][2], self.chromosome['asteroidSpeed'][3])
+        # LR = Low Risk, HR = High Risk
+        asteroidSpeed["LR"] = fuzz.zmf(asteroidSpeed.universe, self.chromosome['asteroidSpeed'][0], self.chromosome['asteroidSpeed'][1])
+        asteroidSpeed["HR"] = fuzz.smf(asteroidSpeed.universe, self.chromosome['asteroidSpeed'][2], self.chromosome['asteroidSpeed'][3])
 
-            # first letter: F = forwards, R = reverse
-            # Second letter is F = Fast, S = Slow
-            # St = stationary
-            currVelocity["RF"] = fuzz.trimf(currVelocity.universe, self.chromosome['currVelocity'][0:3])
-            currVelocity["RS"] = fuzz.trimf(currVelocity.universe, self.chromosome['currVelocity'][3:6])
-            currVelocity["St"] = fuzz.trimf(currVelocity.universe, self.chromosome['currVelocity'][6:9])
-            currVelocity["FF"] = fuzz.trimf(currVelocity.universe, self.chromosome['currVelocity'][9:12])
-            currVelocity["FS"] = fuzz.trimf(currVelocity.universe, self.chromosome['currVelocity'][12:15])
+        # first letter: F = forwards, R = reverse
+        # Second letter is F = Fast, S = Slow
+        # St = stationary
+        currVelocity["RF"] = fuzz.trimf(currVelocity.universe, self.chromosome['currVelocity'][0:3])
+        currVelocity["RS"] = fuzz.trimf(currVelocity.universe, self.chromosome['currVelocity'][3:6])
+        currVelocity["St"] = fuzz.trimf(currVelocity.universe, self.chromosome['currVelocity'][6:9])
+        currVelocity["FF"] = fuzz.trimf(currVelocity.universe, self.chromosome['currVelocity'][9:12])
+        currVelocity["FS"] = fuzz.trimf(currVelocity.universe, self.chromosome['currVelocity'][12:15])
 
-            # first letter: F = forwards, R = reverse
-            # Second letter is F = Fast, S = Slow
-            # St = stationary
-            thrust["RF"] = fuzz.trimf(thrust.universe, self.chromosome['thrust'][0:3])
-            thrust["RS"] = fuzz.trimf(thrust.universe, self.chromosome['thrust'][3:6])
-            thrust["St"] = fuzz.trimf(thrust.universe, self.chromosome['thrust'][6:9])
-            thrust["FF"] = fuzz.trimf(thrust.universe, self.chromosome['thrust'][9:12])
-            thrust["FS"] = fuzz.trimf(thrust.universe, self.chromosome['thrust'][12:15])
-
-        if self.mode == 'train':
-            # C = close, M = medium, F = far
-            asteroidDistance["C"] = fuzz.trimf(asteroidDistance.universe, self.chromosome[0].value['asteroidDistance'][0:3])
-            asteroidDistance["M"] = fuzz.trimf(asteroidDistance.universe, self.chromosome[0].value['asteroidDistance'][3:6])
-            asteroidDistance["F"] = fuzz.smf(asteroidDistance.universe, self.chromosome[0].value['asteroidDistance'][6], self.chromosome[0].value['asteroidDistance'][7])
-
-            # LR = Low Risk, HR = High Risk
-            asteroidSpeed["LR"] = fuzz.zmf(asteroidSpeed.universe, self.chromosome[0].value['asteroidSpeed'][0], self.chromosome[0].value['asteroidSpeed'][1])
-            asteroidSpeed["HR"] = fuzz.smf(asteroidSpeed.universe, self.chromosome[0].value['asteroidSpeed'][2], self.chromosome[0].value['asteroidSpeed'][3])
-
-            # first letter: F = forwards, R = reverse
-            # Second letter is F = Fast, S = Slow
-            # St = stationary
-            currVelocity["RF"] = fuzz.trimf(currVelocity.universe, self.chromosome[0].value['currVelocity'][0:3])
-            currVelocity["RS"] = fuzz.trimf(currVelocity.universe, self.chromosome[0].value['currVelocity'][3:6])
-            currVelocity["St"] = fuzz.trimf(currVelocity.universe, self.chromosome[0].value['currVelocity'][6:9])
-            currVelocity["FF"] = fuzz.trimf(currVelocity.universe, self.chromosome[0].value['currVelocity'][9:12])
-            currVelocity["FS"] = fuzz.trimf(currVelocity.universe, self.chromosome[0].value['currVelocity'][12:15])
-
-            # first letter: F = forwards, R = reverse
-            # Second letter is F = Fast, S = Slow
-            # St = stationary
-            thrust["RF"] = fuzz.trimf(thrust.universe, self.chromosome[0].value['thrust'][0:3])
-            thrust["RS"] = fuzz.trimf(thrust.universe, self.chromosome[0].value['thrust'][3:6])
-            thrust["St"] = fuzz.trimf(thrust.universe, self.chromosome[0].value['thrust'][6:9])
-            thrust["FF"] = fuzz.trimf(thrust.universe, self.chromosome[0].value['thrust'][9:12])
-            thrust["FS"] = fuzz.trimf(thrust.universe, self.chromosome[0].value['thrust'][12:15])
+        # first letter: F = forwards, R = reverse
+        # Second letter is F = Fast, S = Slow
+        # St = stationary
+        thrust["RF"] = fuzz.trimf(thrust.universe, self.chromosome['thrust'][0:3])
+        thrust["RS"] = fuzz.trimf(thrust.universe, self.chromosome['thrust'][3:6])
+        thrust["St"] = fuzz.trimf(thrust.universe, self.chromosome['thrust'][6:9])
+        thrust["FF"] = fuzz.trimf(thrust.universe, self.chromosome['thrust'][9:12])
+        thrust["FS"] = fuzz.trimf(thrust.universe, self.chromosome['thrust'][12:15])
 
         rules = [
             ctrl.Rule(asteroidDistance["C"] & currVelocity['RF'], thrust["RF"]),
