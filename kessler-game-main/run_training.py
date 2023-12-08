@@ -159,11 +159,6 @@ def main():
     pre = time.perf_counter()
     score,perf_data = final_game.run(scenario=my_training_scenario, controllers=[BestController, ScottDickController()])
 
-    print("Final Stats")
-    print(f"Hits:\t\t {score.teams[0].asteroids_hit}\t\t{score.teams[1].asteroids_hit}")
-    print(f"Deaths:\t\t {score.teams[0].deaths}\t\t{score.teams[1].deaths}")
-    print(f"Accuracy:\t\t {score.teams[0].accuracy}\t\t{score.teams[1].accuracy}")
-
 
 
 main()
