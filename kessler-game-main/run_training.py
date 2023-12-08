@@ -10,6 +10,8 @@ from examples.scott_dick_controller import ScottDickController
 from examples.smart_controller import SmartController
 from examples.graphics_both import GraphicsBoth
 
+game = None
+
 def evaluate_fitness(chromosome):
     """
     Evaluates the fitness of the current individual on a set of scenarios.
@@ -62,67 +64,68 @@ def generate_chromosome():
 
     return chromosome
 
+def main():
+    # set game as global variable for fitness function
+    global game
+    # set scenario as global variable for fitness function
+    global scenarios
 
+    # Define game scenario
+    my_training_scenario = Scenario(name='Train Scenario',
+                                num_asteroids=10,
+                                ship_states=[
+                                    {'position': (400, 400), 'angle': 90, 'lives': 3, 'team': 1, "mines_remaining": 3},
+                                    {'position': (400, 600), 'angle': 90, 'lives': 3, 'team': 2, "mines_remaining": 3},
+                                ],
+                                map_size=(1000, 800),
+                                time_limit=60,
+                                ammo_limit_multiplier=0,
+                                stop_if_no_ammo=False)
 
-# Define game scenario
-my_training_scenario = Scenario(name='Train Scenario',
-                            num_asteroids=10,
-                            ship_states=[
-                                {'position': (400, 400), 'angle': 90, 'lives': 3, 'team': 1, "mines_remaining": 3},
-                                {'position': (400, 600), 'angle': 90, 'lives': 3, 'team': 2, "mines_remaining": 3},
-                            ],
-                            map_size=(1000, 800),
-                            time_limit=60,
-                            ammo_limit_multiplier=0,
-                            stop_if_no_ammo=False)
+    # Define Game Settings
+    game_settings = {'perf_tracker': True,
+                    'graphics_type': GraphicsType.Tkinter,
+                    'realtime_multiplier': 1,
+                    'graphics_obj': None,
+                    'frequency': 30}
 
-# Define Game Settings
-game_settings = {'perf_tracker': True,
-                 'graphics_type': GraphicsType.Tkinter,
-                 'realtime_multiplier': 1,
-                 'graphics_obj': None,
-                 'frequency': 30}
+    scenarios = [my_training_scenario]
 
-# set game as global variable for fitness function
-global game
-#game = KesslerGame(settings=game_settings)  # Use this to visualize the game scenario
-game = TrainerEnvironment(settings=game_settings)  # Use this for max-speed, no-graphics simulation
+    #game = KesslerGame(settings=game_settings)  # Use this to visualize the game scenario
+    game = TrainerEnvironment(settings=game_settings)  # Use this for max-speed, no-graphics simulation
 
-# set scenario as global variable for fitness function
-global scenarios
-scenarios = [my_training_scenario]
+    # initialize population
+    #population = generate_chromosome()
+    # set parameters of genetic algorithm
+    ga = EasyGA.GA()
+    ga.gene_impl = lambda: generate_chromosome()
+    ga.chromosome_length = 1
+    ga.population_size = 2
+    ga.target_fitness_type = 'max'
+    ga.generation_goal = 2
+    # need to see what the syntax is when two parameters are passed
+    ga.fitness_function_impl = evaluate_fitness
+    ga.evolve()
+    ga.print_best_chromosome()
 
+    # get best chromosome
+    best_fitness = ga.database.get_highest_chromosome()
+    best_chromosome = ga.database.query_all(
+        f"""
+        SELECT chromosome
+        FROM data
+        WHERE fitness = {max(best_fitness)}
+        """
+    )
 
-# initialize population
-#population = generate_chromosome()
-# set parameters of genetic algorithm
-ga = EasyGA.GA()
-ga.gene_impl = lambda: generate_chromosome()
-ga.chromosome_length = 1
-ga.population_size = 2
-ga.target_fitness_type = 'max'
-ga.generation_goal = 2
-# need to see what the syntax is when two parameters are passed
-ga.fitness_function_impl = evaluate_fitness
-ga.evolve()
-ga.print_best_chromosome()
+    # create controller with best chromosome
+    best_chromosome = best_chromosome.replace("'", "\"")
+    best_chromosome = json.loads(best_chromosome)
+    BestController = SmartController(best_chromosome[0],'test')
 
-# get best chromosome
-best_fitness = ga.database.get_highest_chromosome()
-best_chromosome = ga.database.query_all(
-    f"""
-    SELECT chromosome
-    FROM data
-    WHERE fitness = {max(best_fitness)}
-    """
-)
+    # run game with the best controller
+    final_game = KesslerGame(settings=game_settings)  # Use this to visualize the game scenario
+    pre = time.perf_counter()
+    score,perf_data = final_game.run(scenario=my_training_scenario, controllers=[BestController, ScottDickController()])
 
-# create controller with best chromosome
-best_chromosome = best_chromosome.replace("'", "\"")
-best_chromosome = json.loads(best_chromosome)
-BestController = SmartController(best_chromosome[0],'test')
-
-# run game with the best controller
-final_game = KesslerGame(settings=game_settings)  # Use this to visualize the game scenario
-pre = time.perf_counter()
-score,perf_data = final_game.run(scenario=my_training_scenario, controllers=[BestController, ScottDickController()])
+main()
