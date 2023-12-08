@@ -73,10 +73,10 @@ def generate_static_chromosome():
     # values hardcoded for a first testing
     # after successful testing -> generate random values
     chromosome['bullet_time'] = [0,0,0.05,0,0.07,0.15,0.0,0.2]
-    chromosome['theta_delta'] = [-1*math.pi, -5/9 * math.pi, -3/4 * math.pi, -1/2*math.pi, -1/4 * math.pi, -1/2 * math.pi, -1/4 * math.pi,0, -1/180 * math.pi, 0, 1/180 * math.pi, 0, 1/4 * math.pi, 1/2 * math.pi, 1/4 * math.pi, 1/2 * math.pi, 3/4 * math.pi, 5/9 * math.pi, math.pi]
+    chromosome['theta_delta'] = [-1*math.pi, -5/9 * math.pi, -3/4 * math.pi, -1/2*math.pi, -1/4 * math.pi, -1/2 * math.pi, -1/3 * math.pi,0, -1/180 * math.pi, 0, 1/180 * math.pi, 0, 1/4 * math.pi, 1/2 * math.pi, 1/4 * math.pi, 1/2 * math.pi, 3/4 * math.pi, 5/9 * math.pi, math.pi]
     chromosome['asteroidDistance'] = [0, 0, 200, 100, 150, 200, 200, 350]
     chromosome['asteroidSpeed'] = [0, 50, 30, 70]
-    chromosome['currVelocity'] = [-300, -250, -100, -150, -70, 5, -5, 0, 5, 100, 250, 300, 5, 90, 200]
+    chromosome['currVelocity'] = [-300, -290, -100, -150, -70, 5, -5, 0, 5, 100, 250, 270, 5, 120, 200]
 
     # generate fuzzy sets for consequents
     chromosome['ship_turn'] = [-180, -100, -135, -120, -45, -90, -60, 0, -1, 0, 1, 0, 60, 90, 45, 120, 135, 100, 180]
