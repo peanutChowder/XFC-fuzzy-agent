@@ -434,8 +434,3 @@ class SmartController(KesslerController):
     @property
     def name(self) -> str:
         return "Smart Controller"
-    
-if __name__ == "__main__":
-    sc = SmartController()
-
-    sc.initMoveControl()
