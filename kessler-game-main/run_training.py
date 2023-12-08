@@ -2,6 +2,7 @@ import time
 import math
 import EasyGA
 import json
+import numpy as np
 
 from kesslergame import Scenario, KesslerGame, GraphicsType, TrainerEnvironment
 from examples.test_controller import TestController
@@ -48,16 +49,16 @@ def generate_chromosome():
     # generate fuzzy sets for antecedents
     # values hardcoded for a first testing
     # after successful testing -> generate random values
-    chromosome['bullet_time'] = [0,0,0.05,0,0.07,0.15,0.0,0.2]
-    chromosome['theta_delta'] = [-1*math.pi, -5/9 * math.pi, -3/4 * math.pi, -1/2*math.pi, -1/4 * math.pi, -1/2 * math.pi, -1/4 * math.pi,0, -1/180 * math.pi, 0, 1/180 * math.pi, 0, 1/4 * math.pi, 1/2 * math.pi, 1/4 * math.pi, 1/2 * math.pi, 3/4 * math.pi, 5/9 * math.pi, math.pi]
-    chromosome['asteroidDistance'] = [0, 0, 200, 100, 150, 200, 200, 350]
-    chromosome['asteroidSpeed'] = [0, 50, 30, 70]
-    chromosome['currVelocity'] = [-300, -250, -100, -150, -70, 5, -5, 0, 5, 100, 250, 300, 5, 90, 200]
+    chromosome['bullet_time'] = [0,0,0.05,0,np.random.uniform(0,0.15),0.15,0.0,0.2]
+    chromosome['theta_delta'] = [-1*math.pi, -5/9 * math.pi, -3/4 * math.pi, np.random.uniform(-3/4 * math.pi,-1/4 * math.pi), -1/4 * math.pi, -1/2 * math.pi, np.random.uniform(-1/2 * math.pi,0),0, -1/180 * math.pi, np.random.uniform(-1/180 * math.pi,1/180 * math.pi), 1/180 * math.pi, 0, np.random.uniform(0,1/2 * math.pi), 1/2 * math.pi, 1/4 * math.pi, np.random.uniform(1/4 * math.pi,3/4 * math.pi), 3/4 * math.pi, 5/9 * math.pi, math.pi]
+    chromosome['asteroidDistance'] = [0, 0, 200, 100, np.random.uniform(100,200), 200, 200, 350]
+    chromosome['asteroidSpeed'] = [0, np.random.uniform(35,65), 30, np.random.uniform(55,85)]
+    chromosome['currVelocity'] = [-300, -250, -100, -150, np.random.uniform(-150,5), 5, -5, np.random.uniform(-5,5), 5, 100, np.random.uniform(100,300), 300, 5, 90, 200]
 
     # generate fuzzy sets for consequents
-    chromosome['ship_turn'] = [-180, -100, -135, -120, -45, -90, -60, 0, -1, 0, 1, 0, 60, 90, 45, 120, 135, 100, 180]
+    chromosome['ship_turn'] = [-180, -100, -135, np.random.uniform(-135,-45), -45, -90, np.random.uniform(-90,0), 0, -1, np.random.uniform(-1,1), 1, 0, np.random.uniform(0,90), 90, 45, np.random.uniform(45,135), 135, 100, 180]
     chromosome['ship_fire'] = [-1,-1,0.0,0.0,1,1]
-    chromosome['thrust'] = [-300, -300, -150, -200, -100, 50, -5, 0, 5, 150, 300, 300, 50, 100, 200]
+    chromosome['thrust'] = [-300, -300, -150, -200, np.random.uniform(-200,50), 50, -5, np.random.uniform(-5,5), 5, 150, 300, 300, 50, np.random.uniform(50,200), 200]
 
     return chromosome
 
@@ -98,9 +99,9 @@ scenarios = [my_training_scenario]
 ga = EasyGA.GA()
 ga.gene_impl = lambda: generate_chromosome()
 ga.chromosome_length = 1
-ga.population_size = 5
+ga.population_size = 2
 ga.target_fitness_type = 'max'
-ga.generation_goal = 1
+ga.generation_goal = 2
 # need to see what the syntax is when two parameters are passed
 ga.fitness_function_impl = evaluate_fitness
 ga.evolve()
@@ -112,7 +113,7 @@ best_chromosome = ga.database.query_all(
     f"""
     SELECT chromosome
     FROM data
-    WHERE fitness = {best_fitness}
+    WHERE fitness = {max(best_fitness)}
     """
 )
 
