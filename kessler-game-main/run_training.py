@@ -125,9 +125,9 @@ def main():
     ga = EasyGA.GA()
     ga.gene_impl = lambda: generate_chromosome()
     ga.chromosome_length = 1
-    ga.population_size = 1
+    ga.population_size = 20
     ga.target_fitness_type = 'max'
-    ga.generation_goal = 1
+    ga.generation_goal = 4
     ga.fitness_function_impl = evaluate_fitness
     ga.evolve()
     ga.print_best_chromosome()
@@ -158,5 +158,12 @@ def main():
     final_game = KesslerGame(settings=game_settings)  # Use this to visualize the game scenario
     pre = time.perf_counter()
     score,perf_data = final_game.run(scenario=my_training_scenario, controllers=[BestController, ScottDickController()])
+
+    print("Final Stats")
+    print(f"Hits:\t\t {score.teams[0].asteroids_hit}\t\t{score.teams[1].asteroids_hit}")
+    print(f"Deaths:\t\t {score.teams[0].deaths}\t\t{score.teams[1].deaths}")
+    print(f"Accuracy:\t\t {score.teams[0].accuracy}\t\t{score.teams[1].accuracy}")
+
+
 
 main()
