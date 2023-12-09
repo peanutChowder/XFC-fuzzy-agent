@@ -1,4 +1,11 @@
+######################################################################################################
 # ECE 449
+# Group 28
+# Authors: Jacob Feng, Kristoffer Kussmann, Ismail Altaf Hussain
+# 
+# This file is a controller for the Kessler game with hardcoded membership values generated from
+# genetic algorithm optimization on a fuzzy system.
+######################################################################################################
 
 from kesslergame import KesslerController # In Eclipse, the name of the library is kesslergame, not src.kesslergame
 from typing import Dict, Tuple

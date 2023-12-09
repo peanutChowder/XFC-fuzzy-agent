@@ -1,3 +1,14 @@
+######################################################################################################
+# ECE 449
+# Group 28
+# Authors: Jacob Feng, Kristoffer Kussmann, Ismail Altaf Hussain
+# 
+# This file trains and optimizes the fuzzy system controller for the Kessler game. The training is done
+# by passing chromosomes to the 'smart_controller.py' file, where our (non-hardcoded) controller
+# accepts a chromosome input.
+######################################################################################################
+
+
 import time
 import math
 import EasyGA

@@ -1,5 +1,11 @@
-# Jacob Feng
+######################################################################################################
 # ECE 449
+# Group 28
+# Authors: Jacob Feng, Kristoffer Kussmann, Ismail Altaf Hussain
+# 
+# This file is a controller for the Kessler game that accepts a chromosome for setting membership
+# bounds in a fuzzy system. To be used with 'run_training.py'.
+######################################################################################################
 
 from kesslergame import KesslerController # In Eclipse, the name of the library is kesslergame, not src.kesslergame
 from typing import Dict, Tuple
